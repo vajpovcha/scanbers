@@ -4,7 +4,7 @@
 // ============================================================
 
 var SHEET_NAME  = 'Reports';
-var ADMIN_SECRET = 'CHANGE_THIS_SECRET'; // ← เปลี่ยนเป็นรหัสลับของคุณ
+var ADMIN_SECRET = 'scanbers_secret_2026';
 
 var COLS = {
   ID:             1,
