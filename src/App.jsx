@@ -9,6 +9,7 @@ import AdminPage from './pages/AdminPage'
 import SearchPage from './pages/SearchPage'
 import ReportPage from './pages/ReportPage'
 import AboutPage from './pages/AboutPage'
+import AppealPage from './pages/AppealPage'
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
             <Route path="/report" element={<ReportPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/admin" element={<AdminPage />} />
+            <Route path="/appeal" element={<AppealPage />} />
           </Routes>
         </main>
         <Footer />

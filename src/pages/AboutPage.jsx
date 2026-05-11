@@ -77,6 +77,21 @@ export default function AboutPage() {
           <p className="text-sm text-gray-600 leading-relaxed font-lao">{a.disclaimerBody}</p>
         </div>
 
+        {/* Appeal CTA */}
+        <div className="rounded-xl border border-gray-200 bg-gray-900 p-6 flex flex-col sm:flex-row items-center gap-4">
+          <div className="text-4xl">⚖️</div>
+          <div className="flex-1 text-center sm:text-left">
+            <h2 className="font-bold text-white font-lao text-base">{t.appeal.title}</h2>
+            <p className="text-gray-400 text-sm mt-1 font-lao">{t.appeal.subtitle}</p>
+          </div>
+          <Link
+            to="/appeal"
+            className="shrink-0 bg-white text-gray-900 font-bold px-5 py-2.5 rounded-lg text-sm hover:bg-gray-100 transition-colors font-lao whitespace-nowrap"
+          >
+            {t.appeal.badge} →
+          </Link>
+        </div>
+
         {/* Emergency contacts — tap-to-call cards */}
         <div className="card p-6 space-y-4">
           <div className="flex items-center gap-2.5">

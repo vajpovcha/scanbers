@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { adminFetchAll, adminUpdateStatus, adminDeleteRecord } from '../services/sheetsService'
+import { adminFetchAll, adminUpdateStatus, adminDeleteRecord, adminFetchAppeals, adminUpdateAppealStatus } from '../services/sheetsService'
 import CategoryBadge from '../components/CategoryBadge'
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'admin'
@@ -70,6 +70,20 @@ function StatusBadge({ status }) {
   )
 }
 
+// ---- Appeal status badge ----
+function AppealStatusBadge({ status }) {
+  const styles = {
+    pending:  'bg-yellow-100 text-yellow-800 border-yellow-200',
+    approved: 'bg-green-100 text-green-800 border-green-200',
+    rejected: 'bg-red-100 text-red-800 border-red-200',
+  }
+  return (
+    <span className={`inline-flex items-center rounded-full border text-xs font-semibold px-2.5 py-0.5 ${styles[status] ?? styles.pending}`}>
+      {status}
+    </span>
+  )
+}
+
 // ---- Confirm dialog ----
 function ConfirmDialog({ message, onConfirm, onCancel }) {
   return (
@@ -85,9 +99,24 @@ function ConfirmDialog({ message, onConfirm, onCancel }) {
   )
 }
 
+const APPEAL_STATUS_TABS = [
+  { id: '', label: 'All' },
+  { id: 'pending', label: 'Pending' },
+  { id: 'approved', label: 'Approved' },
+  { id: 'rejected', label: 'Rejected' },
+]
+
+const REASON_LABELS = {
+  impersonation: '🎭 Impersonation',
+  incorrect:     '❌ Incorrect Info',
+  resolved:      '✅ Resolved',
+  other:         '📝 Other',
+}
+
 // ---- Main Admin Page ----
 export default function AdminPage() {
   const [authed, setAuthed] = useState(() => sessionStorage.getItem('scanbers_admin') === '1')
+  const [mode, setMode] = useState('reports') // 'reports' | 'appeals'
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -111,11 +140,13 @@ export default function AdminPage() {
     setTimeout(() => setToast(''), 2500)
   }
 
-  const loadRecords = useCallback(async (tab) => {
+  const loadRecords = useCallback(async (tab, currentMode) => {
     setLoading(true)
     setError('')
     try {
-      const data = await adminFetchAll(tab)
+      const data = currentMode === 'appeals'
+        ? await adminFetchAppeals(tab)
+        : await adminFetchAll(tab)
       setRecords(data)
     } catch (e) {
       setError(e.message)
@@ -125,13 +156,17 @@ export default function AdminPage() {
   }, [])
 
   useEffect(() => {
-    if (authed) loadRecords(activeTab)
-  }, [authed, activeTab, loadRecords])
+    if (authed) loadRecords(activeTab, mode)
+  }, [authed, activeTab, mode, loadRecords])
 
   async function handleStatus(id, status) {
     setActionLoading(id + status)
     try {
-      await adminUpdateStatus(id, status)
+      if (mode === 'appeals') {
+        await adminUpdateAppealStatus(id, status)
+      } else {
+        await adminUpdateStatus(id, status)
+      }
       setRecords(r => r.map(rec => rec.id === id ? { ...rec, status } : rec))
       showToast(`Marked as ${status}`)
     } catch (e) {
@@ -179,14 +214,34 @@ export default function AdminPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Admin Panel</h1>
-          <p className="text-sm text-gray-500 mt-0.5 font-lao">ຈັດການລາຍງານການສໍ້ໂກງ</p>
+          <p className="text-sm text-gray-500 mt-0.5 font-lao">ຈັດການລາຍງານ ແລະ ຄຳຮ້ອງ</p>
         </div>
         <button onClick={handleLogout} className="btn-secondary text-sm py-1.5 px-4">Logout</button>
       </div>
 
-      {/* Tabs */}
+      {/* Mode switcher */}
+      <div className="flex gap-1 p-1 bg-gray-100 rounded-xl w-fit">
+        <button
+          onClick={() => { setMode('reports'); setActiveTab('') }}
+          className={`px-5 py-2 rounded-lg text-sm font-semibold transition-colors ${
+            mode === 'reports' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          📋 ລາຍງານ / Reports
+        </button>
+        <button
+          onClick={() => { setMode('appeals'); setActiveTab('') }}
+          className={`px-5 py-2 rounded-lg text-sm font-semibold transition-colors ${
+            mode === 'appeals' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          ⚖️ ຄຳຮ້ອງ / Appeals
+        </button>
+      </div>
+
+      {/* Status Tabs */}
       <div className="flex gap-2 flex-wrap">
-        {STATUS_TABS.map(tab => (
+        {(mode === 'appeals' ? APPEAL_STATUS_TABS : STATUS_TABS).map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
@@ -196,13 +251,13 @@ export default function AdminPage() {
                 : 'bg-white text-gray-600 border-gray-300 hover:border-lao-sky'
             }`}
           >
-            {tab.label} / {tab.labelLo}
+            {tab.label}
             {activeTab === tab.id && records.length > 0 && (
               <span className="ml-1.5 bg-white/20 rounded-full px-1.5 text-xs">{records.length}</span>
             )}
           </button>
         ))}
-        <button onClick={() => loadRecords(activeTab)} className="ml-auto btn-secondary text-sm py-1.5 px-3">
+        <button onClick={() => loadRecords(activeTab, mode)} className="ml-auto btn-secondary text-sm py-1.5 px-3">
           ↻ Refresh
         </button>
       </div>
@@ -218,8 +273,97 @@ export default function AdminPage() {
       {loading ? (
         <div className="text-center py-16 text-gray-400">Loading…</div>
       ) : records.length === 0 ? (
-        <div className="text-center py-16 text-gray-400 font-lao">ບໍ່ມີລາຍງານ / No records found</div>
+        <div className="text-center py-16 text-gray-400 font-lao">
+          {mode === 'appeals' ? 'ບໍ່ມີຄຳຮ້ອງ / No appeals found' : 'ບໍ່ມີລາຍງານ / No records found'}
+        </div>
+      ) : mode === 'appeals' ? (
+
+        /* ── Appeals Table ── */
+        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                {['Date','Appellant','Contact Info','Number to Check','Reason','Explanation','Evidence','Status','Actions'].map(h => (
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-600 whitespace-nowrap">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {records.map(rec => (
+                <tr key={rec.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{formatDate(rec.submittedAt)}</td>
+                  <td className="px-4 py-3 max-w-[140px]">
+                    <p className="font-medium text-gray-800 text-xs truncate font-lao">{rec.fullName}</p>
+                    <p className="text-xs text-gray-500">{rec.applicantEmail}</p>
+                  </td>
+                  <td className="px-4 py-3 text-xs text-gray-500">
+                    <p className="font-mono">{rec.applicantPhone}</p>
+                    {rec.idCardNumber && <p className="text-gray-400">ID: {rec.idCardNumber}</p>}
+                  </td>
+                  <td className="px-4 py-3 text-xs">
+                    {rec.phoneToCheck   && <p className="font-mono text-gray-700">📱 {rec.phoneToCheck}</p>}
+                    {rec.accountToCheck && <p className="font-mono text-gray-700">🏦 {rec.bankName ? `${rec.bankName}: ` : ''}{rec.accountToCheck}</p>}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="inline-block bg-purple-50 text-purple-700 border border-purple-200 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap">
+                      {REASON_LABELS[rec.appealReason] ?? rec.appealReason}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 max-w-[200px]">
+                    <p className="text-xs text-gray-600 line-clamp-3 font-lao">{rec.explanation}</p>
+                  </td>
+                  <td className="px-4 py-3 text-xs space-y-1">
+                    {rec.evidenceUrl && (
+                      <a href={rec.evidenceUrl} target="_blank" rel="noreferrer" className="block text-lao-sky hover:underline">Link ↗</a>
+                    )}
+                    {rec.evidenceImageUrl && (
+                      <a href={rec.evidenceImageUrl} target="_blank" rel="noreferrer" className="block text-lao-sky hover:underline">Image ↗</a>
+                    )}
+                    {!rec.evidenceUrl && !rec.evidenceImageUrl && <span className="text-gray-300">—</span>}
+                  </td>
+                  <td className="px-4 py-3">
+                    <AppealStatusBadge status={rec.status} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-col gap-1 min-w-[110px]">
+                      {rec.status !== 'approved' && (
+                        <button
+                          disabled={!!actionLoading}
+                          onClick={() => handleStatus(rec.id, 'approved')}
+                          className="text-xs px-2.5 py-1 rounded-md bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors disabled:opacity-50"
+                        >
+                          ✓ Approve
+                        </button>
+                      )}
+                      {rec.status !== 'pending' && (
+                        <button
+                          disabled={!!actionLoading}
+                          onClick={() => handleStatus(rec.id, 'pending')}
+                          className="text-xs px-2.5 py-1 rounded-md bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100 transition-colors disabled:opacity-50"
+                        >
+                          ↺ Pending
+                        </button>
+                      )}
+                      {rec.status !== 'rejected' && (
+                        <button
+                          disabled={!!actionLoading}
+                          onClick={() => handleStatus(rec.id, 'rejected')}
+                          className="text-xs px-2.5 py-1 rounded-md bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50"
+                        >
+                          ✕ Reject
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
       ) : (
+
+        /* ── Reports Table ── */
         <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">

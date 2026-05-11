@@ -10,11 +10,12 @@ export default function Footer() {
           <span className="text-lao-red font-bold text-base">ScanBers</span>
           <span>{t.footer.tagline}</span>
         </div>
-        <nav className="flex gap-4 font-lao">
+        <nav className="flex flex-wrap justify-center gap-4 font-lao">
           <Link to="/" className="hover:text-lao-red transition-colors">{t.nav.home}</Link>
           <Link to="/search" className="hover:text-lao-red transition-colors">{t.nav.search}</Link>
           <Link to="/report" className="hover:text-lao-red transition-colors">{t.nav.report}</Link>
           <Link to="/about" className="hover:text-lao-red transition-colors">{t.nav.about}</Link>
+          <Link to="/appeal" className="hover:text-lao-red transition-colors">{t.appeal.badge}</Link>
         </nav>
         <p className="text-xs text-gray-400 font-lao">{t.footer.copyright(new Date().getFullYear())}</p>
       </div>

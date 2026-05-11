@@ -43,6 +43,20 @@ export async function submitReport(formData) {
   return data
 }
 
+// ------- Appeal -------
+export async function submitAppeal(formData) {
+  checkConfig()
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'submitAppeal', ...formData }),
+  })
+  if (!res.ok) throw new Error('Submission failed')
+  const data = await res.json()
+  if (!data.success) throw new Error(data.error ?? 'Unknown error')
+  return data
+}
+
 // ------- Admin -------
 export async function adminFetchAll(statusFilter = '') {
   checkConfig()
@@ -60,6 +74,28 @@ export async function adminUpdateStatus(id, status) {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify({ action: 'updateStatus', id, status, secret: ADMIN_SECRET }),
+  })
+  const data = await res.json()
+  if (!data.success) throw new Error(data.error ?? 'Failed')
+  return data
+}
+
+export async function adminFetchAppeals(statusFilter = '') {
+  checkConfig()
+  const url = `${APPS_SCRIPT_URL}?action=admin-appeals&secret=${encodeURIComponent(ADMIN_SECRET)}${statusFilter ? `&status=${statusFilter}` : ''}`
+  const res = await fetch(url)
+  if (!res.ok) throw new Error('Failed to fetch appeals')
+  const data = await res.json()
+  if (data.error) throw new Error(data.error)
+  return data.records ?? []
+}
+
+export async function adminUpdateAppealStatus(id, status) {
+  checkConfig()
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'updateAppealStatus', id, status, secret: ADMIN_SECRET }),
   })
   const data = await res.json()
   if (!data.success) throw new Error(data.error ?? 'Failed')

@@ -136,9 +136,17 @@ export default function SearchPage() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {results.map((r, i) => <ScamCard key={r.id ?? i} record={r} onSelect={setSelected} />)}
-              </div>
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {results.map((r, i) => <ScamCard key={r.id ?? i} record={r} onSelect={setSelected} />)}
+                </div>
+                <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 flex flex-col sm:flex-row items-center gap-2 justify-between">
+                  <p className="text-xs text-gray-500 font-lao">{t.search.appealHint}</p>
+                  <Link to="/appeal" className="text-xs font-semibold text-lao-blue hover:underline font-lao whitespace-nowrap">
+                    {t.appeal.badge} →
+                  </Link>
+                </div>
+              </>
             )}
           </>
         )}

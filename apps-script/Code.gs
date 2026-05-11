@@ -3,8 +3,9 @@
 // Deploy as: Execute as ME, Anyone can access
 // ============================================================
 
-var SHEET_NAME  = 'Reports';
-var ADMIN_SECRET = 'scanbers_secret_2026';
+var SHEET_NAME         = 'Reports';
+var APPEALS_SHEET_NAME = 'Appeals';
+var ADMIN_SECRET       = 'scanbers_secret_2026';
 
 var COLS = {
   ID:             1,
@@ -20,6 +21,26 @@ var COLS = {
   STATUS:         11,
   REPORT_COUNT:   12,
 };
+
+function getAppealsSheet() {
+  var ss    = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(APPEALS_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(APPEALS_SHEET_NAME);
+    sheet.appendRow([
+      'ID', 'Submitted At', 'Status',
+      'Full Name', 'Applicant Phone', 'Applicant Email', 'ID Card Number',
+      'Phone To Check', 'Account To Check', 'Bank Name', 'Appeal Reason',
+      'Explanation', 'Evidence URL', 'Evidence Image URL'
+    ]);
+    sheet.setFrozenRows(1);
+    // Format phone columns as plain text
+    sheet.getRange(2, 5, sheet.getMaxRows()).setNumberFormat('@');
+    sheet.getRange(2, 8, sheet.getMaxRows()).setNumberFormat('@');
+    sheet.getRange(2, 9, sheet.getMaxRows()).setNumberFormat('@');
+  }
+  return sheet;
+}
 
 function getSheet() {
   var ss    = SpreadsheetApp.getActiveSpreadsheet();
@@ -72,6 +93,9 @@ function doGet(e) {
     } else if (action === 'admin-list') {
       if (!checkSecret(e.parameter.secret)) return forbidden();
       result = adminListAll(e.parameter.status || '');
+    } else if (action === 'admin-appeals') {
+      if (!checkSecret(e.parameter.secret)) return forbidden();
+      result = adminListAppeals(e.parameter.status || '');
     } else {
       result = { error: 'Unknown action' };
     }
@@ -95,6 +119,11 @@ function doPost(e) {
     } else if (body.action === 'deleteRecord') {
       if (!checkSecret(body.secret)) return forbidden();
       result = deleteRecord(body.id);
+    } else if (body.action === 'submitAppeal') {
+      result = submitAppealRecord(body);
+    } else if (body.action === 'updateAppealStatus') {
+      if (!checkSecret(body.secret)) return forbidden();
+      result = updateAppealStatus(body.id, body.status);
     } else {
       result = { success: false, error: 'Unknown action' };
     }
@@ -188,6 +217,78 @@ function deleteRecord(id) {
     }
   }
   return { success: false, error: 'Record not found' };
+}
+
+// ------- Admin Appeals -------
+function appealRowToRecord(row) {
+  return {
+    id:               row[0],
+    submittedAt:      row[1],
+    status:           row[2],
+    fullName:         row[3],
+    applicantPhone:   row[4],
+    applicantEmail:   row[5],
+    idCardNumber:     row[6],
+    phoneToCheck:     row[7],
+    accountToCheck:   row[8],
+    bankName:         row[9],
+    appealReason:     row[10],
+    explanation:      row[11],
+    evidenceUrl:      row[12],
+    evidenceImageUrl: row[13],
+  };
+}
+
+function adminListAppeals(statusFilter) {
+  var sheet = getAppealsSheet();
+  var data  = sheet.getDataRange().getValues();
+  if (data.length <= 1) return { records: [] };
+  var rows = data.slice(1);
+  if (statusFilter) {
+    rows = rows.filter(function(r) { return String(r[2]).toLowerCase() === statusFilter.toLowerCase(); });
+  }
+  rows.sort(function(a,b){ return new Date(b[1]) - new Date(a[1]); });
+  return { records: rows.map(appealRowToRecord) };
+}
+
+function updateAppealStatus(id, newStatus) {
+  var sheet = getAppealsSheet();
+  var data  = sheet.getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === String(id)) {
+      sheet.getRange(i + 1, 3).setValue(newStatus);
+      return { success: true };
+    }
+  }
+  return { success: false, error: 'Appeal not found' };
+}
+
+// ------- Appeal submission -------
+function submitAppealRecord(data) {
+  var sheet  = getAppealsSheet();
+  var id     = Utilities.getUuid();
+  var row    = sheet.getLastRow() + 1;
+  // Plain-text format for phone/account columns
+  sheet.getRange(row, 5).setNumberFormat('@');
+  sheet.getRange(row, 8).setNumberFormat('@');
+  sheet.getRange(row, 9).setNumberFormat('@');
+  sheet.getRange(row, 1, 1, 14).setValues([[
+    id,
+    data.submittedAt       || new Date().toISOString(),
+    'pending',
+    data.fullName          || '',
+    data.applicantPhone    || '',
+    data.applicantEmail    || '',
+    data.idCardNumber      || '',
+    data.phoneToCheck      || '',
+    data.accountToCheck    || '',
+    data.bankName          || '',
+    data.appealReason      || '',
+    data.explanation       || '',
+    data.evidenceUrl       || '',
+    data.evidenceImageUrl  || '',
+  ]]);
+  return { success: true, id: id };
 }
 
 // ------- Helpers -------
