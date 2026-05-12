@@ -257,10 +257,69 @@ function updateAppealStatus(id, newStatus) {
   for (var i = 1; i < data.length; i++) {
     if (String(data[i][0]) === String(id)) {
       sheet.getRange(i + 1, 3).setValue(newStatus);
+
+      // Send email notification on approved / rejected
+      if (newStatus === 'approved' || newStatus === 'rejected') {
+        var record = appealRowToRecord(data[i]);
+        try { sendAppealNotification(record, newStatus); } catch(e) { /* email fail silently */ }
+      }
+
       return { success: true };
     }
   }
   return { success: false, error: 'Appeal not found' };
+}
+
+function sendAppealNotification(record, newStatus) {
+  var email = record.applicantEmail;
+  if (!email) return;
+
+  var approved = (newStatus === 'approved');
+  var subject  = approved
+    ? '[ScanBers] ຄຳຮ້ອງຂອງທ່ານໄດ້ຮັບການອະນຸມັດ / Your appeal has been approved'
+    : '[ScanBers] ຄຳຮ້ອງຂອງທ່ານຖືກປະຕິເສດ / Your appeal was not approved';
+
+  var phoneOrAccount = record.phoneToCheck
+    ? record.phoneToCheck
+    : record.accountToCheck;
+
+  var body = approved ? [
+    'ສະບາຍດີ ' + record.fullName + ',',
+    '',
+    'ທີມງານ ScanBers ໄດ້ກວດສອບຄຳຮ້ອງຂອງທ່ານ ແລະ ອະນຸມັດໃຫ້ລຶບ/ແກ້ໄຂຂໍ້ມູນທີ່ກ່ຽວຂ້ອງກັບ: ' + phoneOrAccount,
+    '',
+    'ຂໍ້ມູນດັ່ງກ່າວຈະຖືກດຳເນີນການພາຍໃນ 1-3 ວັນທຳການ.',
+    '',
+    '---',
+    'Dear ' + record.fullName + ',',
+    '',
+    'Your appeal regarding ' + phoneOrAccount + ' has been APPROVED.',
+    'The relevant data will be actioned within 1–3 business days.',
+    '',
+    'Reference: ' + record.id,
+    '',
+    'ScanBers Team | scanbers.app',
+  ].join('\n') : [
+    'ສະບາຍດີ ' + record.fullName + ',',
+    '',
+    'ທີມງານ ScanBers ໄດ້ກວດສອບຄຳຮ້ອງຂອງທ່ານສຳລັບໝາຍເລກ: ' + phoneOrAccount,
+    'ແຕ່ຫຼັກຖານທີ່ໃຫ້ມາຍັງບໍ່ພຽງພໍໃນການດຳເນີນການຕາມຄຳຮ້ອງ.',
+    '',
+    'ຖ້າທ່ານມີຫຼັກຖານເພີ່ມເຕີມ ສາມາດຍື່ນຄຳຮ້ອງໃໝ່ໄດ້ທີ່ scanbers.app/appeal',
+    '',
+    '---',
+    'Dear ' + record.fullName + ',',
+    '',
+    'After reviewing your appeal for ' + phoneOrAccount + ', we were unable to action your request due to insufficient evidence.',
+    '',
+    'If you have additional evidence, you may submit a new appeal at scanbers.app/appeal',
+    '',
+    'Reference: ' + record.id,
+    '',
+    'ScanBers Team | scanbers.app',
+  ].join('\n');
+
+  MailApp.sendEmail({ to: email, subject: subject, body: body });
 }
 
 // ------- Appeal submission -------
