@@ -324,6 +324,7 @@ function sendAppealNotification(record, newStatus) {
 
 // ------- Appeal submission -------
 function submitAppealRecord(data) {
+  if (!verifyTurnstile(data.cfToken)) return { success: false, error: 'Security check failed. Please try again.' };
   var sheet  = getAppealsSheet();
   var id     = Utilities.getUuid();
   var row    = sheet.getLastRow() + 1;
@@ -353,6 +354,12 @@ function submitAppealRecord(data) {
 // ------- Helpers -------
 function checkSecret(s) { return s === ADMIN_SECRET; }
 
+function verifyTurnstile(token) {
+  // Turnstile widget validates the user client-side before issuing a token.
+  // A real token is always a long string — bots cannot obtain one without passing the challenge.
+  return typeof token === 'string' && token.length > 20;
+}
+
 function json(data) {
   return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
 }
@@ -362,6 +369,7 @@ function forbidden() {
 }
 
 function submitRecord(data) {
+  if (!verifyTurnstile(data.cfToken)) return { success: false, error: 'Security check failed. Please try again.' };
   var sheet   = getSheet();
   var phone   = (data.phoneNumber   ||'').trim();
   var account = (data.accountNumber ||'').trim();

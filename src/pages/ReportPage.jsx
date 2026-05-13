@@ -4,6 +4,7 @@ import { submitReport } from '../services/sheetsService'
 import { uploadImage } from '../services/imgbbService'
 import { CATEGORIES } from '../config'
 import { useT } from '../hooks/useT'
+import TurnstileWidget from '../components/TurnstileWidget'
 
 const INITIAL = {
   category: '',
@@ -27,6 +28,8 @@ export default function ReportPage() {
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState('')
   const [imageError, setImageError] = useState('')
+  const [cfToken, setCfToken] = useState('')
+  const [tsReset, setTsReset] = useState(0)
   const fileRef = useRef()
   const t = useT()
 
@@ -43,6 +46,7 @@ export default function ReportPage() {
       errs.contact = t.report.errContact
     if (form.reporterEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.reporterEmail))
       errs.reporterEmail = t.report.errEmail
+    if (!cfToken) errs.captcha = t.report.errCaptcha
     return errs
   }
 
@@ -68,7 +72,7 @@ export default function ReportPage() {
     if (Object.keys(errs).length) { setErrors(errs); return }
     setErrors({})
 
-    const formData = { ...form, reportedAt: new Date().toISOString() }
+    const formData = { ...form, reportedAt: new Date().toISOString(), cfToken }
 
     if (imageFile) {
       setStatus('uploading')
@@ -86,6 +90,8 @@ export default function ReportPage() {
       await submitReport(formData)
       setStatus('success')
       setForm(INITIAL)
+      setCfToken('')
+      setTsReset(k => k + 1)
       removeImage()
     } catch (err) {
       setErrorMsg(err.message)
@@ -300,6 +306,19 @@ export default function ReportPage() {
           {/* Submit */}
           <div className="space-y-3 pb-4">
             <p className="text-xs text-gray-400 text-center font-lao px-2">{t.report.disclaimer}</p>
+
+            {/* Turnstile */}
+            <div className="flex flex-col items-center gap-1">
+              <TurnstileWidget
+                resetKey={tsReset}
+                onVerify={token => { setCfToken(token); setErrors(e => ({ ...e, captcha: '' })) }}
+                onExpire={() => setCfToken('')}
+              />
+              {errors.captcha && (
+                <p className="text-xs text-red-500 font-lao">{errors.captcha}</p>
+              )}
+            </div>
+
             <button
               type="submit"
               disabled={status === 'submitting' || status === 'uploading'}

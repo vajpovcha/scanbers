@@ -129,6 +129,7 @@ const translations = {
       errEmail: 'ກະລຸນາໃສ່ທີ່ຢູ່ອີເມວທີ່ຖືກຕ້ອງ.',
       errFailed: 'ສົ່ງລ້ົມເຫລວ',
       tryAgain: 'ລອງໃໝ່',
+      errCaptcha: 'ກະລຸນາຢືນຢັນວ່າທ່ານບໍ່ແມ່ນ Robot',
     },
 
     about: {
@@ -266,6 +267,7 @@ const translations = {
       errExplanation: 'ກະລຸນາອະທິບາຍຢ່າງໜ້ອຍ 30 ຕົວອັກສອນ',
       errDeclare: 'ກະລຸນາຢືນຢັນທັງສອງຂໍ້',
       errSubmit: 'ສົ່ງຄຳຮ້ອງລ້ົມເຫລວ — ກະລຸນາລອງໃໝ່',
+      errCaptcha: 'ກະລຸນາຢືນຢັນວ່າທ່ານບໍ່ແມ່ນ Robot',
     },
   },
 
@@ -399,6 +401,7 @@ const translations = {
       errEmail: 'Enter a valid email address.',
       errFailed: 'Submission failed',
       tryAgain: 'Try again',
+      errCaptcha: 'Please complete the security check',
     },
 
     about: {
@@ -536,6 +539,7 @@ const translations = {
       errExplanation: 'Please explain your case in at least 30 characters',
       errDeclare: 'Please confirm both declarations',
       errSubmit: 'Submission failed — please try again',
+      errCaptcha: 'Please complete the security check',
     },
   },
 }

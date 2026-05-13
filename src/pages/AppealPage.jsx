@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { submitAppeal } from '../services/sheetsService'
 import { uploadImage } from '../services/imgbbService'
 import { useT } from '../hooks/useT'
+import TurnstileWidget from '../components/TurnstileWidget'
 
 const INITIAL = {
   fullName: '',
@@ -27,6 +28,8 @@ export default function AppealPage() {
   const [errorMsg, setErrorMsg] = useState('')
   const [declare1, setDeclare1] = useState(false)
   const [declare2, setDeclare2] = useState(false)
+  const [cfToken, setCfToken] = useState('')
+  const [tsReset, setTsReset] = useState(0)
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState('')
   const [imageError, setImageError] = useState('')
@@ -70,6 +73,7 @@ export default function AppealPage() {
     if (!form.explanation.trim() || form.explanation.trim().length < 30)
                                       errs.explanation     = at.errExplanation
     if (!declare1 || !declare2)       errs.declare         = at.errDeclare
+    if (!cfToken)                     errs.captcha         = at.errCaptcha
     return errs
   }
 
@@ -89,10 +93,12 @@ export default function AppealPage() {
         setUploadingImage(false)
       }
 
-      const payload = { ...form, evidenceImageUrl: imgUrl, submittedAt: new Date().toISOString() }
+      const payload = { ...form, evidenceImageUrl: imgUrl, submittedAt: new Date().toISOString(), cfToken }
       const data = await submitAppeal(payload)
       setRefId(data.id ?? '')
       setStatus('success')
+      setCfToken('')
+      setTsReset(k => k + 1)
     } catch (err) {
       setUploadingImage(false)
       setErrorMsg(err.message || at.errSubmit)
@@ -386,6 +392,18 @@ export default function AppealPage() {
             ⚠️ {errorMsg || at.errSubmit}
           </div>
         )}
+
+        {/* Turnstile */}
+        <div className="flex flex-col items-center gap-1">
+          <TurnstileWidget
+            resetKey={tsReset}
+            onVerify={token => { setCfToken(token); setErrors(e => ({ ...e, captcha: '' })) }}
+            onExpire={() => setCfToken('')}
+          />
+          {errors.captcha && (
+            <p className="text-xs text-red-500 font-lao">{errors.captcha}</p>
+          )}
+        </div>
 
         {/* Submit */}
         <button
