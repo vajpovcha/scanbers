@@ -39,6 +39,12 @@ export async function submitReport(formData) {
   })
   if (!res.ok) throw new Error('Submission failed')
   const data = await res.json()
+  // Duplicate detection — propagate a typed error so the form can keep its values
+  if (data.status === 'duplicate') {
+    const err = new Error(data.message || 'This report appears to be duplicated.')
+    err.code = 'DUPLICATE'
+    throw err
+  }
   if (!data.success) throw new Error(data.error ?? 'Unknown error')
   return data
 }

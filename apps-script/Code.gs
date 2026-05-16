@@ -3,9 +3,14 @@
 // Deploy as: Execute as ME, Anyone can access
 // ============================================================
 
-var SHEET_NAME         = 'Reports';
-var APPEALS_SHEET_NAME = 'Appeals';
-var ADMIN_SECRET       = 'scanbers_secret_2026';
+var SHEET_NAME             = 'Reports';
+var APPEALS_SHEET_NAME     = 'Appeals';
+var RAW_REPORTS_SHEET_NAME = 'RawReports';
+var PHONE_STATS_SHEET_NAME = 'PhoneStats';
+var ADMIN_SECRET           = 'scanbers_secret_2026';
+
+// Spam window: same phone + same description within this many minutes ⇒ duplicate
+var DUPLICATE_WINDOW_MINUTES = 10;
 
 var COLS = {
   ID:             1,
@@ -368,11 +373,132 @@ function forbidden() {
   return json({ error: 'Unauthorized' });
 }
 
+// ============================================================
+// Duplicate Detection — RawReports + PhoneStats
+// ============================================================
+
+function getRawReportsSheet() {
+  var ss    = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(RAW_REPORTS_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(RAW_REPORTS_SHEET_NAME);
+    sheet.appendRow(['ReportID', 'PhoneNumber', 'Description', 'ImageUrl', 'Timestamp']);
+    sheet.setFrozenRows(1);
+    // Force phone column to be plain text so leading zeros and long numbers survive
+    sheet.getRange(2, 2, sheet.getMaxRows()).setNumberFormat('@');
+  }
+  return sheet;
+}
+
+function getPhoneStatsSheet() {
+  var ss    = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(PHONE_STATS_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(PHONE_STATS_SHEET_NAME);
+    sheet.appendRow(['PhoneNumber', 'ReportCount', 'LastUpdatedAt']);
+    sheet.setFrozenRows(1);
+    sheet.getRange(2, 1, sheet.getMaxRows()).setNumberFormat('@');
+  }
+  return sheet;
+}
+
+/**
+ * Normalize a Lao phone number to canonical 020xxxxxxxx form.
+ *  - strips spaces, dashes, dots, parentheses, "+"
+ *  - "+856 20 12345678" → "02012345678"
+ *  - "856 20 12345678"  → "02012345678"
+ *  - "20 12345678"      → "02012345678" (10-digit Lao mobile prefix)
+ *  - already-canonical "020xxxxxxxx" passes through
+ */
+function normalizePhoneNumber(phone) {
+  if (!phone) return '';
+  var digits = String(phone).replace(/\D/g, '');
+  if (!digits) return '';
+  // Strip country code 856 → leading 0
+  if (digits.length >= 11 && digits.indexOf('856') === 0) {
+    digits = '0' + digits.substring(3);
+  }
+  // Add leading 0 for raw mobile prefix
+  if (digits.length === 10 && digits.indexOf('20') === 0) {
+    digits = '0' + digits;
+  }
+  return digits;
+}
+
+/**
+ * Spam check: returns true if RawReports already contains a row with
+ *   same normalized phone AND exact same description AND timestamp within window.
+ */
+function isSpamDuplicate(normalizedPhone, description) {
+  if (!normalizedPhone || !description) return false;
+  var sheet = getRawReportsSheet();
+  var data  = sheet.getDataRange().getValues();
+  if (data.length <= 1) return false;
+  var desc   = String(description).trim();
+  var cutoff = new Date(Date.now() - DUPLICATE_WINDOW_MINUTES * 60 * 1000);
+  for (var i = data.length - 1; i >= 1; i--) {
+    var rowPhone = String(data[i][1] || '').trim();
+    var rowDesc  = String(data[i][2] || '').trim();
+    var rowTime  = new Date(data[i][4]);
+    if (isNaN(rowTime.getTime())) continue;
+    // Iterating from newest backwards — break early once we leave the window
+    if (rowTime < cutoff) break;
+    if (rowPhone === normalizedPhone && rowDesc === desc) return true;
+  }
+  return false;
+}
+
+function appendRawReport(reportId, normalizedPhone, description, imageUrl) {
+  var sheet = getRawReportsSheet();
+  var row   = sheet.getLastRow() + 1;
+  sheet.getRange(row, 2).setNumberFormat('@');
+  sheet.getRange(row, 1, 1, 5).setValues([[
+    reportId,
+    normalizedPhone || '',
+    description     || '',
+    imageUrl        || '',
+    new Date(),
+  ]]);
+}
+
+function upsertPhoneStats(normalizedPhone) {
+  if (!normalizedPhone) return;
+  var sheet = getPhoneStatsSheet();
+  var data  = sheet.getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][0] || '').trim() === normalizedPhone) {
+      sheet.getRange(i + 1, 2).setValue((Number(data[i][1]) || 0) + 1);
+      sheet.getRange(i + 1, 3).setValue(new Date());
+      return;
+    }
+  }
+  // New phone → insert row
+  var row = sheet.getLastRow() + 1;
+  sheet.getRange(row, 1).setNumberFormat('@');
+  sheet.getRange(row, 1, 1, 3).setValues([[normalizedPhone, 1, new Date()]]);
+}
+
+// ============================================================
+// Main submit handler
+// ============================================================
+
 function submitRecord(data) {
   if (!verifyTurnstile(data.cfToken)) return { success: false, error: 'Security check failed. Please try again.' };
+
+  var normalizedPhone = normalizePhoneNumber(data.phoneNumber);
+
+  // 1. Spam / duplication check — same phone + same description within 10 minutes
+  if (isSpamDuplicate(normalizedPhone, data.description)) {
+    return { status: 'duplicate', message: 'This report appears to be duplicated.' };
+  }
+
+  // 2. Save to canonical Reports sheet (with existing dedupe-and-increment behaviour)
   var sheet   = getSheet();
   var phone   = (data.phoneNumber   ||'').trim();
   var account = (data.accountNumber ||'').trim();
+  var reportId = '';
+  var existed  = false;
+
   if (phone || account) {
     var rows = sheet.getDataRange().getValues();
     for (var i = 1; i < rows.length; i++) {
@@ -380,28 +506,37 @@ function submitRecord(data) {
       var rAccount = String(rows[i][COLS.ACCOUNT_NUMBER-1]||'').trim();
       if ((phone && rPhone === phone) || (account && rAccount === account)) {
         sheet.getRange(i+1, COLS.REPORT_COUNT).setValue((rows[i][COLS.REPORT_COUNT-1]||1)+1);
-        return { success: true, duplicate: true };
+        reportId = String(rows[i][COLS.ID-1]);
+        existed  = true;
+        break;
       }
     }
   }
-  var id      = Utilities.getUuid();
-  var nextRow = sheet.getLastRow() + 1;
-  // Set plain-text format BEFORE writing so leading zeros are preserved
-  sheet.getRange(nextRow, COLS.PHONE_NUMBER).setNumberFormat('@');
-  sheet.getRange(nextRow, COLS.ACCOUNT_NUMBER).setNumberFormat('@');
-  sheet.getRange(nextRow, 1, 1, 12).setValues([[
-    id,
-    data.reportedAt     || new Date().toISOString(),
-    data.category       ||'',
-    data.scammerName    ||'',
-    data.phoneNumber    ||'',
-    data.accountNumber  ||'',
-    data.bankName       ||'',
-    data.description    ||'',
-    data.evidenceUrl    ||'',
-    data.reporterEmail  ||'',
-    'pending',
-    1
-  ]]);
-  return { success: true, id: id };
+
+  if (!existed) {
+    reportId = Utilities.getUuid();
+    var nextRow = sheet.getLastRow() + 1;
+    sheet.getRange(nextRow, COLS.PHONE_NUMBER).setNumberFormat('@');
+    sheet.getRange(nextRow, COLS.ACCOUNT_NUMBER).setNumberFormat('@');
+    sheet.getRange(nextRow, 1, 1, 12).setValues([[
+      reportId,
+      data.reportedAt     || new Date().toISOString(),
+      data.category       ||'',
+      data.scammerName    ||'',
+      data.phoneNumber    ||'',
+      data.accountNumber  ||'',
+      data.bankName       ||'',
+      data.description    ||'',
+      data.evidenceUrl    ||'',
+      data.reporterEmail  ||'',
+      'pending',
+      1
+    ]]);
+  }
+
+  // 3. Log to RawReports + upsert PhoneStats (audit + aggregate)
+  appendRawReport(reportId, normalizedPhone, data.description || '', data.evidenceUrl || '');
+  if (normalizedPhone) upsertPhoneStats(normalizedPhone);
+
+  return { success: true, id: reportId, duplicate: existed };
 }

@@ -130,6 +130,7 @@ const translations = {
       errFailed: 'ສົ່ງລ້ົມເຫລວ',
       tryAgain: 'ລອງໃໝ່',
       errCaptcha: 'ກະລຸນາຢືນຢັນວ່າທ່ານບໍ່ແມ່ນ Robot',
+      errDuplicate: 'This report appears to be duplicated.',
     },
 
     about: {
@@ -408,6 +409,7 @@ const translations = {
       errFailed: 'Submission failed',
       tryAgain: 'Try again',
       errCaptcha: 'Please complete the security check',
+      errDuplicate: 'This report appears to be duplicated.',
     },
 
     about: {

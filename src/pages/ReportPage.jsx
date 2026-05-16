@@ -109,6 +109,15 @@ export default function ReportPage() {
       setTsReset(k => k + 1)
       clearImages()
     } catch (err) {
+      // Duplicate submission — keep form values, just show inline notice
+      if (err.code === 'DUPLICATE') {
+        setErrorMsg(t.report.errDuplicate)
+        setStatus('error')
+        // Reset Turnstile so the user can re-verify on the next attempt
+        setCfToken('')
+        setTsReset(k => k + 1)
+        return
+      }
       setErrorMsg(err.message)
       setStatus('error')
     }
