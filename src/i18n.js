@@ -130,7 +130,7 @@ const translations = {
       errFailed: 'ສົ່ງລ້ົມເຫລວ',
       tryAgain: 'ລອງໃໝ່',
       errCaptcha: 'ກະລຸນາຢືນຢັນວ່າທ່ານບໍ່ແມ່ນ Robot',
-      errDuplicate: 'This report appears to be duplicated.',
+      errDuplicate: 'ຂໍອະໄພ ລາຍງານສະບັບນີ້ ເປັນລາຍງານທີ່ມີລັກສະນະຊໍ້າ.',
     },
 
     about: {
@@ -154,7 +154,7 @@ const translations = {
         ['ຫລອກໃຫ້ລົງທຶນ ອ້າງຄົນດັງ ຫຼື ອົງກອນທີ່ມີຊື່ສຽງ', 'ຜູ້ສໍ້ໂກງສ້າງໂປຣໄຟລ໌ປອມຂອງຄົນດັງ ຫຼື ອ້າງເປັນອົງກອນໜ້າເຊື່ອຖື ເພື່ອຊັກຈູງໃຫ້ລົງທຶນໃນທຸລະກິດ ຫຼື ໂຄງການທີ່ໃຫ້ຜົນຕອບແທນສູງ ເຊັ່ນ: ຫຸ້ນ, ຄໍາ ຫຼື ສະກຸນເງິນດິຈິຕອນ. ໃນຊ່ວງແລກອາດໄດ້ຮັບຜົນຕອບແທນຈິງ ແຕ່ເມື່ອລົງທຶນເງິນກ້ອນໃຫຍ່ ຜູ້ສໍ້ໂກງຈະຫາຍໄປ.'],
       ],
       disclaimerTitle: 'ຂໍ້ສະຫງວນສິດ',
-      disclaimerBody: 'ລາຍງານທັງໝົດຖືກສົ່ງໂດຍຊຸມຊົນສາທາລະນະ ແລະ ຍັງບໍ່ໄດ້ຮັບການກວດສອບ ບໍ່ແມ່ນການຕັດສິນຄວາມຜິດທາງກົດໝາຍ. ScanBers ບໍ່ຮັບປະກັນຄວາມຖືກຕ້ອງຂອງລາຍງານໃດໆ. ຖ້າທ່ານເຊື່ອວ່າລາຍງານທີ່ກ່ຽວກັບທ່ານບໍ່ຖືກຕ້ອງ, ກະລຸນາຕິດຕໍ່ພວກເຮົາ.',
+      disclaimerBody: 'ລາຍງານທັງໝົດແມ່ນຖືກສົ່ງໂດຍຊຸມຊົນສາທາລະນະ ແລະ ຍັງບໍ່ໄດ້ຮັບການກວດສອບ ບໍ່ແມ່ນການຕັດສິນຄວາມຜິດທາງກົດໝາຍ. ລະບົບ ScanBers ເປັນພຽງສື່ກາງໃນການເຕືອນໄພເທົ່ານັ້ນ, ບໍ່ມີເຈດຕະນາເຮັດໃຫ້ບຸກຄົນໃດໜຶ່ງເສຍຊື່ສຽງ ແລະ ບໍ່ຮັບປະກັນຄວາມຖືກຕ້ອງຂອງລາຍງານໃດໆ. ຖ້າທ່ານເຊື່ອວ່າລາຍງານທີ່ກ່ຽວກັບທ່ານບໍ່ຖືກຕ້ອງ, ກະລຸນາສົ່ງຄໍາຮ້ອງຫາພວກເຮົາ.',
       emergencyTitle: 'ໝາຍເລກສຸກເສີນ (ລາວ)',
       emergency: [
         ['🚔', 'ຕຳຫຼວດ', '1191'],
@@ -433,7 +433,7 @@ const translations = {
         ['Celebrity & Organization Investment Scam', 'Scammers impersonate well-known individuals or reputable organizations to solicit investments in high-return schemes such as stocks, gold, or cryptocurrency. Victims may receive genuine early returns to build confidence, but lose their full investment once a large sum is committed.'],
       ],
       disclaimerTitle: 'Disclaimer',
-      disclaimerBody: 'Reports are submitted by the public and have not been independently verified. ScanBers does not guarantee the accuracy of any report. If you believe a report about you is false, please contact us.',
+      disclaimerBody: 'All reports are submitted by the public community and have not been verified. They do not constitute a legal determination of wrongdoing. The ScanBers system serves solely as an intermediary warning platform and bears no intention of defaming any individual, nor does it guarantee the accuracy of any report submitted. If you believe that a report pertaining to you is inaccurate, please submit a formal complaint to us.',
       emergencyTitle: 'Emergency contacts (Laos)',
       emergency: [
         ['🚔', 'Police', '1191'],
