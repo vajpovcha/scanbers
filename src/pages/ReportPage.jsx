@@ -27,8 +27,7 @@ export default function ReportPage() {
   const [errors, setErrors] = useState({})
   const [status, setStatus] = useState('idle')
   const [errorMsg, setErrorMsg] = useState('')
-  const [imageFile, setImageFile] = useState(null)
-  const [imagePreview, setImagePreview] = useState('')
+  const [imageFiles, setImageFiles] = useState([]) // [{file, preview}] max 3
   const [imageError, setImageError] = useState('')
   const [cfToken, setCfToken] = useState('')
   const [tsReset, setTsReset] = useState(0)
@@ -54,17 +53,27 @@ export default function ReportPage() {
   }
 
   function handleImagePick(e) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (file.size > 8 * 1024 * 1024) { setImageError(t.report.fieldImageTooBig); return }
+    const picked = Array.from(e.target.files || [])
+    if (!picked.length) return
+    const slots = 3 - imageFiles.length
+    const toAdd = picked.slice(0, slots)
+    const tooBig = toAdd.find(f => f.size > 8 * 1024 * 1024)
+    if (tooBig) { setImageError(t.report.fieldImageTooBig); return }
     setImageError('')
-    setImageFile(file)
-    setImagePreview(URL.createObjectURL(file))
+    setImageFiles(prev => [
+      ...prev,
+      ...toAdd.map(file => ({ file, preview: URL.createObjectURL(file) })),
+    ])
+    if (fileRef.current) fileRef.current.value = ''
   }
 
-  function removeImage() {
-    setImageFile(null)
-    setImagePreview('')
+  function removeImage(idx) {
+    setImageFiles(prev => prev.filter((_, i) => i !== idx))
+    setImageError('')
+  }
+
+  function clearImages() {
+    setImageFiles([])
     setImageError('')
     if (fileRef.current) fileRef.current.value = ''
   }
@@ -78,10 +87,11 @@ export default function ReportPage() {
 
     const formData = { ...form, reportedAt: new Date().toISOString(), cfToken }
 
-    if (imageFile) {
+    if (imageFiles.length > 0) {
       setStatus('uploading')
       try {
-        formData.evidenceUrl = await uploadImage(imageFile)
+        const urls = await Promise.all(imageFiles.map(img => uploadImage(img.file)))
+        formData.evidenceUrl = urls.join(',')
       } catch (err) {
         setErrorMsg(err.message === 'FILE_TOO_BIG' ? t.report.fieldImageTooBig : err.message)
         setStatus('error')
@@ -97,7 +107,7 @@ export default function ReportPage() {
       setForm(INITIAL)
       setCfToken('')
       setTsReset(k => k + 1)
-      removeImage()
+      clearImages()
     } catch (err) {
       setErrorMsg(err.message)
       setStatus('error')
@@ -257,36 +267,46 @@ export default function ReportPage() {
               </div>
             </Field>
 
-            {/* Image upload */}
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-gray-700 font-lao">{t.report.fieldImage}</label>
+            {/* Image upload — up to 3 */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 font-lao">
+                {t.report.fieldImage}
+                <span className="ml-1.5 text-xs font-normal text-gray-400">({imageFiles.length}/3)</span>
+              </label>
               <p className="text-xs text-red-600 font-lao">⚠️ {t.report.fieldImageWarning}</p>
-              {imagePreview ? (
-                <div className="relative">
-                  <img src={imagePreview} alt="preview" className="w-full rounded-xl object-cover max-h-52 border border-gray-200" />
-                  <button
-                    type="button" onClick={removeImage}
-                    className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white text-xs px-2.5 py-1 rounded-lg transition-colors font-lao"
-                  >
-                    {t.report.fieldImageRemove}
-                  </button>
-                </div>
-              ) : (
-                <label className="flex flex-col items-center gap-2 border-2 border-dashed border-gray-200 rounded-xl px-4 py-6 cursor-pointer hover:border-lao-sky hover:bg-blue-50/30 transition-colors">
-                  <UploadIcon className="w-7 h-7 text-gray-300" />
-                  <span className="text-sm text-gray-500 font-lao">{t.report.fieldImageHint}</span>
-                  <input
-                    ref={fileRef} type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    className="hidden" onChange={handleImagePick}
-                  />
-                </label>
-              )}
+              <div className="grid grid-cols-3 gap-2">
+                {imageFiles.map((img, i) => (
+                  <div key={i} className="relative aspect-square">
+                    <img
+                      src={img.preview} alt={`preview-${i}`}
+                      className="w-full h-full object-cover rounded-xl border border-gray-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(i)}
+                      className="absolute top-1 right-1 w-6 h-6 bg-black/60 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs transition-colors"
+                    >✕</button>
+                  </div>
+                ))}
+                {imageFiles.length < 3 && (
+                  <label className="aspect-square flex flex-col items-center justify-center gap-1 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-lao-sky hover:bg-blue-50/30 transition-colors">
+                    <UploadIcon className="w-6 h-6 text-gray-300" />
+                    <span className="text-xs text-gray-400 font-lao">
+                      {imageFiles.length === 0 ? t.report.fieldImageHint : `+ ເພີ່ມຮູບ`}
+                    </span>
+                    <input
+                      ref={fileRef} type="file" multiple
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      className="hidden" onChange={handleImagePick}
+                    />
+                  </label>
+                )}
+              </div>
               {imageError && <p className="text-xs text-red-600 font-lao">{imageError}</p>}
             </div>
 
             {/* URL fallback — shown only when no image selected */}
-            {!imagePreview && (
+            {imageFiles.length === 0 && (
               <Field label={t.report.fieldEvidence}>
                 <input
                   value={form.evidenceUrl} onChange={set('evidenceUrl')} type="url"

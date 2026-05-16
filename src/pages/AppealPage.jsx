@@ -34,8 +34,7 @@ export default function AppealPage() {
   const [cfToken, setCfToken] = useState('')
   const [tsReset, setTsReset] = useState(0)
   const rl = useRateLimit('scanbers_appeal_ts')
-  const [imageFile, setImageFile] = useState(null)
-  const [imagePreview, setImagePreview] = useState('')
+  const [imageFiles, setImageFiles] = useState([]) // [{file, preview}] max 3
   const [imageError, setImageError] = useState('')
   const [uploadingImage, setUploadingImage] = useState(false)
   const [refId, setRefId] = useState('')
@@ -49,19 +48,28 @@ export default function AppealPage() {
   }
 
   function handleImagePick(e) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (file.size > 8 * 1024 * 1024) { setImageError(at.fieldImageTooBig); return }
+    const picked = Array.from(e.target.files || [])
+    if (!picked.length) return
+    const slots = 3 - imageFiles.length
+    const toAdd = picked.slice(0, slots)
+    const tooBig = toAdd.find(f => f.size > 8 * 1024 * 1024)
+    if (tooBig) { setImageError(at.fieldImageTooBig); return }
     setImageError('')
-    setImageFile(file)
-    setImagePreview(URL.createObjectURL(file))
+    setImageFiles(prev => [
+      ...prev,
+      ...toAdd.map(file => ({ file, preview: URL.createObjectURL(file) })),
+    ])
+    if (fileRef.current) fileRef.current.value = ''
   }
 
-  function removeImage() {
-    setImageFile(null)
-    setImagePreview('')
+  function removeImage(idx) {
+    setImageFiles(prev => prev.filter((_, i) => i !== idx))
     setImageError('')
-    setForm(f => ({ ...f, evidenceImageUrl: '' }))
+  }
+
+  function clearImages() {
+    setImageFiles([])
+    setImageError('')
     if (fileRef.current) fileRef.current.value = ''
   }
 
@@ -92,9 +100,10 @@ export default function AppealPage() {
 
     try {
       let imgUrl = form.evidenceImageUrl
-      if (imageFile && !imgUrl) {
+      if (imageFiles.length > 0 && !imgUrl) {
         setUploadingImage(true)
-        imgUrl = await uploadImage(imageFile)
+        const urls = await Promise.all(imageFiles.map(img => uploadImage(img.file)))
+        imgUrl = urls.join(',')
         setUploadingImage(false)
       }
 
@@ -105,6 +114,7 @@ export default function AppealPage() {
       setStatus('success')
       setCfToken('')
       setTsReset(k => k + 1)
+      clearImages()
     } catch (err) {
       setUploadingImage(false)
       setErrorMsg(err.message || at.errSubmit)
@@ -337,32 +347,40 @@ export default function AppealPage() {
             />
           </Field>
 
-          {/* Image upload */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5 font-lao">
+          {/* Image upload — up to 3 */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700 font-lao">
               {at.fieldImage}
+              <span className="ml-1.5 text-xs font-normal text-gray-400">({imageFiles.length}/3)</span>
             </label>
-            <p className="text-xs text-gray-400 mb-2 font-lao">{at.fieldImageHint}</p>
-
-            {imagePreview ? (
-              <div className="relative inline-block">
-                <img src={imagePreview} alt="preview" className="h-36 rounded-lg border border-gray-200 object-cover" />
-                <button
-                  type="button"
-                  onClick={removeImage}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-                >✕</button>
-              </div>
-            ) : (
-              <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-lao-sky hover:bg-gray-50 transition-colors">
-                <span className="text-2xl mb-1">📁</span>
-                <span className="text-xs text-gray-500 font-lao">{at.fieldImage}</span>
-                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImagePick} />
-              </label>
-            )}
-            {imageError && <p className="text-red-500 text-xs mt-1 font-lao">{imageError}</p>}
+            <p className="text-xs text-gray-400 font-lao">{at.fieldImageHint}</p>
+            <div className="grid grid-cols-3 gap-2">
+              {imageFiles.map((img, i) => (
+                <div key={i} className="relative aspect-square">
+                  <img
+                    src={img.preview} alt={`ev-${i}`}
+                    className="w-full h-full object-cover rounded-xl border border-gray-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(i)}
+                    className="absolute top-1 right-1 w-6 h-6 bg-black/60 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs transition-colors"
+                  >✕</button>
+                </div>
+              ))}
+              {imageFiles.length < 3 && (
+                <label className="aspect-square flex flex-col items-center justify-center gap-1 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-lao-sky hover:bg-gray-50 transition-colors">
+                  <span className="text-2xl">📁</span>
+                  <span className="text-xs text-gray-400 font-lao">
+                    {imageFiles.length === 0 ? at.fieldImage : '+ ເພີ່ມ'}
+                  </span>
+                  <input ref={fileRef} type="file" multiple accept="image/*" className="hidden" onChange={handleImagePick} />
+                </label>
+              )}
+            </div>
+            {imageError && <p className="text-red-500 text-xs font-lao">{imageError}</p>}
             {uploadingImage && (
-              <p className="text-lao-sky text-xs mt-1 font-lao animate-pulse">{at.uploadingImage}</p>
+              <p className="text-lao-sky text-xs font-lao animate-pulse">{at.uploadingImage}</p>
             )}
           </div>
         </FormSection>
