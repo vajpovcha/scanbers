@@ -4,6 +4,9 @@ import { submitAppeal } from '../services/sheetsService'
 import { uploadImage } from '../services/imgbbService'
 import { useT } from '../hooks/useT'
 import TurnstileWidget from '../components/TurnstileWidget'
+import { useRateLimit } from '../hooks/useRateLimit'
+
+const MAX_PER_WINDOW = 5
 
 const INITIAL = {
   fullName: '',
@@ -30,6 +33,7 @@ export default function AppealPage() {
   const [declare2, setDeclare2] = useState(false)
   const [cfToken, setCfToken] = useState('')
   const [tsReset, setTsReset] = useState(0)
+  const rl = useRateLimit('scanbers_appeal_ts')
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState('')
   const [imageError, setImageError] = useState('')
@@ -82,6 +86,7 @@ export default function AppealPage() {
     const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); scrollToFirstError(errs); return }
 
+    if (!rl.allowed) return
     setStatus('submitting')
     setErrorMsg('')
 
@@ -95,6 +100,7 @@ export default function AppealPage() {
 
       const payload = { ...form, evidenceImageUrl: imgUrl, submittedAt: new Date().toISOString(), cfToken }
       const data = await submitAppeal(payload)
+      rl.recordSubmission()
       setRefId(data.id ?? '')
       setStatus('success')
       setCfToken('')
@@ -405,10 +411,24 @@ export default function AppealPage() {
           )}
         </div>
 
+        {/* Rate limit notice */}
+        {!rl.allowed && (
+          <div className="rounded-lg bg-orange-50 border border-orange-200 px-4 py-3 text-sm text-orange-700 font-lao text-center">
+            {rl.isHourlyLimit
+              ? t.rateLimit.hourly(rl.waitFmt)
+              : t.rateLimit.cooldown(rl.waitFmt)}
+          </div>
+        )}
+        {rl.allowed && rl.remaining < MAX_PER_WINDOW && (
+          <p className="text-xs text-gray-400 text-center font-lao">
+            {t.rateLimit.remaining(rl.remaining)}
+          </p>
+        )}
+
         {/* Submit */}
         <button
           type="submit"
-          disabled={status === 'submitting'}
+          disabled={status === 'submitting' || !rl.allowed}
           className="w-full bg-lao-blue hover:bg-blue-900 disabled:opacity-60 text-white font-bold py-3.5 rounded-xl transition-colors font-lao text-base"
         >
           {status === 'submitting' ? at.submitting : at.submitBtn}

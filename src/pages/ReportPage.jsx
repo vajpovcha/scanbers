@@ -5,6 +5,7 @@ import { uploadImage } from '../services/imgbbService'
 import { CATEGORIES } from '../config'
 import { useT } from '../hooks/useT'
 import TurnstileWidget from '../components/TurnstileWidget'
+import { useRateLimit } from '../hooks/useRateLimit'
 
 const INITIAL = {
   category: '',
@@ -19,6 +20,7 @@ const INITIAL = {
 
 // URL for the official 1533 online complaint portal — update if needed
 const COMPLAINT_URL = 'tel:1533'
+const MAX_PER_WINDOW = 5
 
 export default function ReportPage() {
   const [form, setForm] = useState(INITIAL)
@@ -32,6 +34,7 @@ export default function ReportPage() {
   const [tsReset, setTsReset] = useState(0)
   const fileRef = useRef()
   const t = useT()
+  const rl = useRateLimit('scanbers_report_ts')
 
   function set(field) {
     return e => setForm(f => ({ ...f, [field]: e.target.value }))
@@ -68,6 +71,7 @@ export default function ReportPage() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (!rl.allowed) return
     const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); return }
     setErrors({})
@@ -88,6 +92,7 @@ export default function ReportPage() {
     setStatus('submitting')
     try {
       await submitReport(formData)
+      rl.recordSubmission()
       setStatus('success')
       setForm(INITIAL)
       setCfToken('')
@@ -319,9 +324,23 @@ export default function ReportPage() {
               )}
             </div>
 
+            {/* Rate limit notice */}
+            {!rl.allowed && (
+              <div className="rounded-lg bg-orange-50 border border-orange-200 px-4 py-3 text-sm text-orange-700 font-lao text-center">
+                {rl.isHourlyLimit
+                  ? t.rateLimit.hourly(rl.waitFmt)
+                  : t.rateLimit.cooldown(rl.waitFmt)}
+              </div>
+            )}
+            {rl.allowed && rl.remaining < MAX_PER_WINDOW && (
+              <p className="text-xs text-gray-400 text-center font-lao">
+                {t.rateLimit.remaining(rl.remaining)}
+              </p>
+            )}
+
             <button
               type="submit"
-              disabled={status === 'submitting' || status === 'uploading'}
+              disabled={status === 'submitting' || status === 'uploading' || !rl.allowed}
               className="w-full flex items-center justify-center gap-2 bg-lao-red hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl text-base transition-colors font-lao shadow-sm"
             >
               {status === 'uploading' ? (

@@ -163,6 +163,12 @@ const translations = {
       ],
     },
 
+    rateLimit: {
+      cooldown:   (s) => `⏳ ກະລຸນາລໍຖ້າ ${s} ກ່ອນສົ່ງອີກ`,
+      hourly:     (s) => `🚫 ທ່ານໄດ້ສົ່ງເຖິງຂີດຈຳກັດ 5 ຄັ້ງ/ຊົ່ວໂມງ — ສາມາດສົ່ງໄດ້ໃໝ່ໃນ ${s}`,
+      remaining:  (n) => `ສາມາດສົ່ງໄດ້ອີກ ${n} ຄັ້ງໃນ 1 ຊົ່ວໂມງ`,
+    },
+
     footer: {
       tagline: '– ລະບົບລາຍງານການສໍ້ໂກງ ສປປ ລາວ',
       copyright: (y) => `© ${y} ScanBers. ຖານຂໍ້ມູນການສໍ້ໂກງໂດຍຊຸມຊົນ.`,
@@ -433,6 +439,12 @@ const translations = {
         ['🏦', 'BCEL Bank', '1555'],
         ['🏦', 'LDB Bank', '1698'],
       ],
+    },
+
+    rateLimit: {
+      cooldown:  (s) => `⏳ Please wait ${s} before submitting again`,
+      hourly:    (s) => `🚫 You have reached the 5 submissions/hour limit — try again in ${s}`,
+      remaining: (n) => `${n} submission${n !== 1 ? 's' : ''} remaining this hour`,
     },
 
     footer: {
