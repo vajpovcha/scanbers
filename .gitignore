@@ -2,3 +2,12 @@ node_modules
 dist
 .env
 .env.local
+
+# Claude Code tooling — local worktrees, agent state, etc.
+.claude/
+
+# Editor / OS artifacts
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
