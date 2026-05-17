@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { fetchStats } from '../services/sheetsService'
 import { CATEGORIES } from '../config'
 import { useT } from '../hooks/useT'
+import LaoSkyline from '../components/LaoSkyline'
 
 export default function DashboardPage() {
   const [stats, setStats] = useState(null)
@@ -28,20 +29,22 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col">
-      {/* Hero */}
-      <section className="bg-gradient-to-br from-lao-blue to-lao-sky text-white py-12 px-4">
-        <div className="max-w-4xl mx-auto text-center space-y-3">
-          <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-1.5 text-sm font-medium font-lao">
+      {/* Hero — skyline pushed up with bottom offset so it doesn't sit underneath
+          the stat cards that overlap from below via -mt-6 */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-lao-blue to-lao-sky text-white py-12 px-4 pb-20">
+        <LaoSkyline className="absolute inset-x-0 bottom-[72px] w-full h-[90%]" />
+        <div className="relative max-w-4xl mx-auto text-center space-y-3">
+          <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-4 py-1.5 text-sm font-medium font-lao">
             <span>📊</span>
             <span>{t.dashboard.updatedLive}</span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold font-lao">{t.dashboard.title}</h1>
-          <p className="text-white/80 font-lao">{t.dashboard.subtitle}</p>
+          <h1 className="text-3xl md:text-4xl font-bold font-lao drop-shadow-sm">{t.dashboard.title}</h1>
+          <p className="text-white/80 font-lao drop-shadow-sm">{t.dashboard.subtitle}</p>
         </div>
       </section>
 
       {/* Stat cards */}
-      <section className="max-w-4xl mx-auto px-4 w-full -mt-6 mb-8">
+      <section className="max-w-4xl mx-auto px-4 w-full mt-6 mb-8">
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (

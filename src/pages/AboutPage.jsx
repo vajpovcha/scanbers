@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useT } from '../hooks/useT'
+import LaoSkyline from '../components/LaoSkyline'
 
 export default function AboutPage() {
   const t = useT()
@@ -8,11 +9,12 @@ export default function AboutPage() {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section className="bg-gradient-to-br from-lao-blue to-lao-sky text-white py-12 px-4">
-        <div className="max-w-3xl mx-auto text-center space-y-3">
-          <ShieldIcon className="w-14 h-14 text-white/90 mx-auto" />
-          <h1 className="text-3xl font-bold font-lao">{a.title}</h1>
-          <p className="text-white/80 font-lao">{a.subtitle}</p>
+      <section className="relative overflow-hidden bg-gradient-to-br from-lao-blue to-lao-sky text-white py-12 px-4">
+        <LaoSkyline className="absolute inset-x-0 bottom-0 w-full h-[100%]" />
+        <div className="relative max-w-3xl mx-auto text-center space-y-3">
+          <ShieldIcon className="w-14 h-14 text-white/90 mx-auto drop-shadow" />
+          <h1 className="text-3xl font-bold font-lao drop-shadow-sm">{a.title}</h1>
+          <p className="text-white/80 font-lao drop-shadow-sm">{a.subtitle}</p>
         </div>
       </section>
 

@@ -5,6 +5,7 @@ import { uploadImage } from '../services/imgbbService'
 import { CATEGORIES } from '../config'
 import { useT } from '../hooks/useT'
 import TurnstileWidget from '../components/TurnstileWidget'
+import LaoSkyline from '../components/LaoSkyline'
 import { useRateLimit } from '../hooks/useRateLimit'
 
 const INITIAL = {
@@ -155,13 +156,14 @@ export default function ReportPage() {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section className="bg-gradient-to-br from-lao-blue to-lao-sky text-white py-12 px-4">
-        <div className="max-w-2xl mx-auto text-center space-y-3">
-          <div className="inline-flex items-center gap-2 bg-white/15 rounded-full px-4 py-1.5 text-sm font-lao">
+      <section className="relative overflow-hidden bg-gradient-to-br from-lao-blue to-lao-sky text-white py-12 px-4">
+        <LaoSkyline className="absolute inset-x-0 bottom-0 w-full h-[100%]" />
+        <div className="relative max-w-2xl mx-auto text-center space-y-3">
+          <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-4 py-1.5 text-sm font-lao">
             🛡️ {t.report.heroBadge}
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold font-lao">{t.report.title}</h1>
-          <p className="text-white/80 font-lao">{t.report.subtitle}</p>
+          <h1 className="text-3xl md:text-4xl font-bold font-lao drop-shadow-sm">{t.report.title}</h1>
+          <p className="text-white/80 font-lao drop-shadow-sm">{t.report.subtitle}</p>
         </div>
       </section>
 

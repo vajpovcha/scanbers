@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useLang } from '../context/LanguageContext'
 import { useT } from '../hooks/useT'
+import LaoSkyline from '../components/LaoSkyline'
 
 const SCAM_TYPES = {
   lo: [
@@ -360,14 +361,15 @@ export default function ScamTypesPage() {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section className="bg-gradient-to-br from-lao-blue to-lao-sky text-white py-12 px-4">
-        <div className="max-w-4xl mx-auto text-center space-y-3">
-          <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-1.5 text-sm font-medium font-lao">
+      <section className="relative overflow-hidden bg-gradient-to-br from-lao-blue to-lao-sky text-white py-12 px-4">
+        <LaoSkyline className="absolute inset-x-0 bottom-0 w-full h-[100%]" />
+        <div className="relative max-w-4xl mx-auto text-center space-y-3">
+          <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-4 py-1.5 text-sm font-medium font-lao">
             <span>🛡️</span>
             <span>{t.scamTypes.badge}</span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold font-lao">{t.scamTypes.title}</h1>
-          <p className="text-white/80 font-lao max-w-xl mx-auto">{t.scamTypes.subtitle}</p>
+          <h1 className="text-3xl md:text-4xl font-bold font-lao drop-shadow-sm">{t.scamTypes.title}</h1>
+          <p className="text-white/80 font-lao max-w-xl mx-auto drop-shadow-sm">{t.scamTypes.subtitle}</p>
         </div>
       </section>
 

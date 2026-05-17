@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import ScamCard from '../components/ScamCard'
 import RecordModal from '../components/RecordModal'
+import LaoSkyline from '../components/LaoSkyline'
 import { searchReports, fetchRecentReports } from '../services/sheetsService'
 import { CATEGORIES } from '../config'
 import { useT } from '../hooks/useT'
@@ -57,11 +58,12 @@ export default function SearchPage() {
     <div className="flex flex-col">
       {selected && <RecordModal record={selected} onClose={() => setSelected(null)} />}
       {/* Hero with search bar */}
-      <section className="bg-gradient-to-br from-lao-blue to-lao-sky py-10 px-4">
-        <div className="max-w-2xl mx-auto space-y-4">
+      <section className="relative overflow-hidden bg-gradient-to-br from-lao-blue to-lao-sky py-10 px-4">
+        <LaoSkyline className="absolute inset-x-0 bottom-0 w-full h-[80%]" />
+        <div className="relative max-w-2xl mx-auto space-y-4">
           <div className="text-center text-white space-y-1">
-            <h1 className="text-3xl font-bold font-lao">{t.search.title}</h1>
-            <p className="text-white/80 font-lao text-sm">{t.search.subtitle}</p>
+            <h1 className="text-3xl font-bold font-lao drop-shadow-sm">{t.search.title}</h1>
+            <p className="text-white/80 font-lao text-sm drop-shadow-sm">{t.search.subtitle}</p>
           </div>
           <form onSubmit={handleSubmit} className="flex gap-2">
             <div className="relative flex-1">
@@ -120,11 +122,27 @@ export default function SearchPage() {
 
         {!loading && !error && searched && (
           <>
-            <p className="text-sm text-gray-500 font-lao">
-              {results.length === 0
-                ? t.search.noResults
-                : q ? t.search.foundFor(results.length, q) : t.search.found(results.length)}
-            </p>
+            {(() => {
+              // Use the URL param — only changes when the user actually submits a search
+              const submittedQ = (searchParams.get('q') ?? '').trim()
+              if (results.length === 0) {
+                return <p className="text-sm text-gray-500 font-lao">{t.search.noResults}</p>
+              }
+              if (submittedQ) {
+                return (
+                  <div className="rounded-xl bg-gradient-to-r from-lao-red to-red-600 text-white px-5 py-3.5 shadow-md flex items-center gap-3">
+                    <span className="text-xl drop-shadow">⚠️</span>
+                    <p className="font-bold font-lao text-sm flex-1 drop-shadow-sm">
+                      {t.search.foundFor(results.length, submittedQ)}
+                    </p>
+                    <span className="hidden sm:inline-block bg-white text-lao-red font-extrabold text-xs px-3 py-1 rounded-full">
+                      {results.length}
+                    </span>
+                  </div>
+                )
+              }
+              return <p className="text-sm text-gray-500 font-lao">{t.search.found(results.length)}</p>
+            })()}
 
             {results.length === 0 ? (
               <div className="card p-10 text-center space-y-3">
@@ -138,7 +156,14 @@ export default function SearchPage() {
             ) : (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {results.map((r, i) => <ScamCard key={r.id ?? i} record={r} onSelect={setSelected} />)}
+                  {results.map((r, i) => (
+                    <ScamCard
+                      key={r.id ?? i}
+                      record={r}
+                      onSelect={setSelected}
+                      highlight={searchParams.get('q') ?? ''}
+                    />
+                  ))}
                 </div>
                 <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 flex flex-col sm:flex-row items-center gap-2 justify-between">
                   <p className="text-xs text-gray-500 font-lao">{t.search.appealHint}</p>

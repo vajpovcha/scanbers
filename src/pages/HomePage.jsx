@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import ScamCard from '../components/ScamCard'
 import RecordModal from '../components/RecordModal'
+import LaoSkyline from '../components/LaoSkyline'
 import { fetchRecentReports } from '../services/sheetsService'
 import { CATEGORIES } from '../config'
 import { useT } from '../hooks/useT'
@@ -31,18 +32,20 @@ export default function HomePage() {
     <div className="flex flex-col">
       {selected && <RecordModal record={selected} onClose={() => setSelected(null)} />}
       {/* Hero */}
-      <section className="bg-gradient-to-br from-lao-blue to-lao-sky text-white py-16 px-4">
-        <div className="max-w-2xl mx-auto text-center space-y-5">
+      <section className="relative overflow-hidden bg-gradient-to-br from-lao-blue to-lao-sky text-white py-16 px-4">
+        <LaoSkyline className="absolute inset-x-0 bottom-0 w-full h-[100%]" />
+
+        <div className="relative max-w-2xl mx-auto text-center space-y-5">
           <div className="inline-flex items-center gap-2">
             <ShieldIcon className="w-10 h-10 text-lao-red drop-shadow" />
             <span className="font-black text-3xl tracking-tight text-white drop-shadow">
               Scan<span className="text-lao-red">Bers</span>
             </span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold leading-tight font-lao">
+          <h1 className="text-3xl md:text-4xl font-bold leading-tight font-lao drop-shadow-sm">
             {t.home.heroTitle}
           </h1>
-          <p className="text-white/80 text-base font-lao">
+          <p className="text-white/85 text-base font-lao drop-shadow-sm">
             {t.home.heroSub}
           </p>
           <form onSubmit={handleSearch} className="flex gap-2 mt-4">
@@ -51,9 +54,9 @@ export default function HomePage() {
               onChange={e => setQ(e.target.value)}
               type="search"
               placeholder={t.home.searchPlaceholder}
-              className="flex-1 rounded-lg border-0 bg-white/20 placeholder-white/60 text-white px-4 py-3 text-sm font-lao focus:outline-none focus:ring-2 focus:ring-white/50 focus:bg-white/25"
+              className="flex-1 rounded-lg border-0 bg-white/95 backdrop-blur-md placeholder-gray-400 text-gray-900 px-4 py-3 text-sm font-lao focus:outline-none focus:ring-2 focus:ring-white focus:bg-white shadow-lg"
             />
-            <button type="submit" className="bg-lao-red hover:bg-red-700 text-white font-semibold px-5 py-3 rounded-lg text-sm transition-colors font-lao">
+            <button type="submit" className="bg-lao-red hover:bg-red-700 text-white font-semibold px-5 py-3 rounded-lg text-sm transition-colors font-lao shadow-lg">
               {t.home.searchBtn}
             </button>
           </form>

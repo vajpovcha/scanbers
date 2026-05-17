@@ -21,14 +21,22 @@ function formatDate(dateStr) {
   }
 }
 
-export default function ScamCard({ record, onSelect }) {
+export default function ScamCard({ record, onSelect, highlight = '' }) {
   const { category, scammerName, phoneNumber, accountNumber, bankName, description, reportedAt, reportCount = 1 } = record
   const t = useT()
   const borderColor = LEFT_BORDER[category] ?? LEFT_BORDER.other
 
+  // Did the search query match this card's phone/account?
+  const q = String(highlight || '').trim().toLowerCase()
+  const phoneMatches   = q && phoneNumber   && String(phoneNumber).toLowerCase().includes(q)
+  const accountMatches = q && accountNumber && String(accountNumber).toLowerCase().includes(q)
+  const hasMatch       = phoneMatches || accountMatches
+
   return (
     <article
-      className={`rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex overflow-hidden ${onSelect ? 'cursor-pointer' : ''}`}
+      className={`rounded-xl border bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex overflow-hidden ${
+        hasMatch ? 'border-lao-red ring-2 ring-lao-red/20' : 'border-gray-200'
+      } ${onSelect ? 'cursor-pointer' : ''}`}
       onClick={onSelect ? () => onSelect(record) : undefined}
     >
       {/* Left category color strip */}
@@ -51,20 +59,46 @@ export default function ScamCard({ record, onSelect }) {
         {/* Identifiers — hero of the card */}
         <div className="space-y-1.5">
           {phoneNumber && (
-            <div className="flex items-center gap-2.5 rounded-lg bg-gray-50 border border-gray-100 px-3 py-2.5">
-              <PhoneIcon className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-              <div className="min-w-0">
-                <p className="text-[10px] text-gray-400 font-lao leading-none mb-0.5">{t.card.phone}</p>
-                <p className="font-mono font-bold text-gray-900 text-base tracking-wide">{phoneNumber}</p>
+            <div className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 transition-colors ${
+              phoneMatches
+                ? 'bg-yellow-100 border-2 border-yellow-400 shadow-sm'
+                : 'bg-gray-50 border border-gray-100'
+            }`}>
+              <PhoneIcon className={`w-3.5 h-3.5 shrink-0 ${phoneMatches ? 'text-lao-red' : 'text-gray-400'}`} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <p className={`text-[10px] font-lao leading-none ${phoneMatches ? 'text-lao-red font-bold' : 'text-gray-400'}`}>
+                    {t.card.phone}
+                  </p>
+                  {phoneMatches && (
+                    <span className="text-[9px] font-bold bg-lao-red text-white px-1.5 py-0.5 rounded uppercase tracking-wide">match</span>
+                  )}
+                </div>
+                <p className={`font-mono font-extrabold text-base tracking-wide mt-0.5 ${phoneMatches ? 'text-lao-red' : 'text-gray-900'}`}>
+                  {phoneNumber}
+                </p>
               </div>
             </div>
           )}
           {accountNumber && (
-            <div className="flex items-center gap-2.5 rounded-lg bg-gray-50 border border-gray-100 px-3 py-2.5">
-              <BankIcon className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-              <div className="min-w-0">
-                <p className="text-[10px] text-gray-400 font-lao leading-none mb-0.5">{bankName || t.card.account}</p>
-                <p className="font-mono font-bold text-gray-900 text-base tracking-wide">{accountNumber}</p>
+            <div className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 transition-colors ${
+              accountMatches
+                ? 'bg-yellow-100 border-2 border-yellow-400 shadow-sm'
+                : 'bg-gray-50 border border-gray-100'
+            }`}>
+              <BankIcon className={`w-3.5 h-3.5 shrink-0 ${accountMatches ? 'text-lao-red' : 'text-gray-400'}`} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <p className={`text-[10px] font-lao leading-none ${accountMatches ? 'text-lao-red font-bold' : 'text-gray-400'}`}>
+                    {bankName || t.card.account}
+                  </p>
+                  {accountMatches && (
+                    <span className="text-[9px] font-bold bg-lao-red text-white px-1.5 py-0.5 rounded uppercase tracking-wide">match</span>
+                  )}
+                </div>
+                <p className={`font-mono font-extrabold text-base tracking-wide mt-0.5 ${accountMatches ? 'text-lao-red' : 'text-gray-900'}`}>
+                  {accountNumber}
+                </p>
               </div>
             </div>
           )}
