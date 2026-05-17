@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(npm create *)",
-      "PowerShell(npm create vite@latest . -- --template react 2>&1)",
-      "PowerShell(node --version)"
-    ]
-  }
-}

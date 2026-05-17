@@ -7,7 +7,12 @@ var SHEET_NAME             = 'Reports';
 var APPEALS_SHEET_NAME     = 'Appeals';
 var RAW_REPORTS_SHEET_NAME = 'RawReports';
 var PHONE_STATS_SHEET_NAME = 'PhoneStats';
-var ADMIN_SECRET           = 'scanbers_secret_2026';
+
+// ADMIN_SECRET is now read from Script Properties at runtime — NEVER hardcode here.
+// In Apps Script editor: Project Settings → Script Properties → add ADMIN_SECRET = <your secret>
+function getAdminSecret() {
+  return PropertiesService.getScriptProperties().getProperty('ADMIN_SECRET') || '';
+}
 
 // Spam window: same phone + same description within this many minutes ⇒ duplicate
 var DUPLICATE_WINDOW_MINUTES = 10;
@@ -357,7 +362,10 @@ function submitAppealRecord(data) {
 }
 
 // ------- Helpers -------
-function checkSecret(s) { return s === ADMIN_SECRET; }
+function checkSecret(s) {
+  var secret = getAdminSecret();
+  return !!secret && s === secret;
+}
 
 function verifyTurnstile(token) {
   // Turnstile widget validates the user client-side before issuing a token.
