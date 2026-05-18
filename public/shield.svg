@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Background — Lao blue -->
+  <rect width="64" height="64" rx="12" fill="#002868"/>
+
+  <!-- Shield body — Lao red -->
+  <path
+    fill="#CE1126"
+    d="M32 6 L12 12 v18 c0 13 9 23 20 26 c11 -3 20 -13 20 -26 V12 L32 6 Z"
+  />
+
+  <!-- Check mark — white -->
+  <path
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    d="M22 32 l7 7 l13 -14"
+  />
+</svg>
