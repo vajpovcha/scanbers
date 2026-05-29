@@ -313,13 +313,16 @@ export default function AdminPage() {
                     <p className="text-xs text-gray-600 line-clamp-3 font-lao">{rec.explanation}</p>
                   </td>
                   <td className="px-4 py-3 text-xs space-y-1">
-                    {rec.evidenceUrl && (
-                      <a href={rec.evidenceUrl} target="_blank" rel="noreferrer" className="block text-lao-sky hover:underline">Link ↗</a>
-                    )}
-                    {rec.evidenceImageUrl && (
-                      <a href={rec.evidenceImageUrl} target="_blank" rel="noreferrer" className="block text-lao-sky hover:underline">Image ↗</a>
-                    )}
-                    {!rec.evidenceUrl && !rec.evidenceImageUrl && <span className="text-gray-300">—</span>}
+                    {rec.evidenceUrl
+                      ? rec.evidenceUrl.split(',').filter(Boolean).map((url, i, arr) => (
+                          <a key={i} href={url.trim()} target="_blank" rel="noreferrer" className="block text-lao-sky hover:underline">
+                            {arr.length > 1 ? `ຮູບ ${i + 1} ↗` : 'Evidence ↗'}
+                          </a>
+                        ))
+                      : rec.evidenceImageUrl
+                        ? <a href={rec.evidenceImageUrl} target="_blank" rel="noreferrer" className="block text-lao-sky hover:underline">Image ↗</a>
+                        : <span className="text-gray-300">—</span>
+                    }
                   </td>
                   <td className="px-4 py-3">
                     <AppealStatusBadge status={rec.status} />
@@ -388,9 +391,11 @@ export default function AdminPage() {
                   </td>
                   <td className="px-4 py-3 max-w-[240px]">
                     <p className="text-gray-600 line-clamp-2 text-xs font-lao">{rec.description}</p>
-                    {rec.evidenceUrl && (
-                      <a href={rec.evidenceUrl} target="_blank" rel="noreferrer" className="text-xs text-lao-sky hover:underline">Evidence ↗</a>
-                    )}
+                    {rec.evidenceUrl && rec.evidenceUrl.split(',').filter(Boolean).map((url, i) => (
+                      <a key={i} href={url.trim()} target="_blank" rel="noreferrer" className="block text-xs text-lao-sky hover:underline">
+                        Evidence {rec.evidenceUrl.split(',').filter(Boolean).length > 1 ? `${i + 1}` : ''} ↗
+                      </a>
+                    ))}
                   </td>
                   <td className="px-4 py-3"><StatusBadge status={rec.status} /></td>
                   <td className="px-4 py-3">

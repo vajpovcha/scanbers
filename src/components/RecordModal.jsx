@@ -24,7 +24,10 @@ export default function RecordModal({ record, onClose }) {
   const t = useT()
   const { category, scammerName, phoneNumber, accountNumber, bankName, description, evidenceUrl, reportedAt, reportCount = 1 } = record
   const accent = LEFT_BORDER[category] ?? LEFT_BORDER.other
-  const [imgOpen, setImgOpen] = useState(false)
+  const [imgOpen, setImgOpen] = useState(null) // stores index of open image, or null
+
+  // Support comma-separated multiple image URLs
+  const evidenceUrls = (evidenceUrl || '').split(',').map(u => u.trim()).filter(Boolean)
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose() }
@@ -103,48 +106,87 @@ export default function RecordModal({ record, onClose }) {
 
           {/* Evidence */}
           <div className="space-y-2">
-            <p className="text-xs text-gray-400 font-lao uppercase tracking-wide">{t.modal.evidence}</p>
-            {evidenceUrl ? (
-              isImageUrl(evidenceUrl) ? (
-                <>
-                  <img
-                    src={evidenceUrl}
-                    alt="evidence"
-                    onClick={() => setImgOpen(true)}
-                    className="rounded-xl w-full object-cover max-h-72 border border-gray-100 cursor-zoom-in hover:opacity-90 transition-opacity"
-                    onError={e => { e.target.style.display = 'none' }}
-                  />
-                  {imgOpen && (
-                    <div
-                      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4"
-                      onClick={() => setImgOpen(false)}
-                    >
-                      <img
-                        src={evidenceUrl}
-                        alt="evidence full"
-                        className="max-w-full max-h-full rounded-xl object-contain"
-                        onClick={e => e.stopPropagation()}
-                      />
-                      <button
-                        onClick={() => setImgOpen(false)}
-                        className="absolute top-4 right-4 text-white bg-white/20 hover:bg-white/30 rounded-full p-2 transition-colors"
+            <p className="text-xs text-gray-400 font-lao uppercase tracking-wide">
+              {t.modal.evidence}
+              {evidenceUrls.length > 1 && (
+                <span className="ml-2 text-lao-sky font-bold">{evidenceUrls.length} ຮູບ / images</span>
+              )}
+            </p>
+            {evidenceUrls.length > 0 ? (
+              <>
+                {/* Image grid — 1 col for 1 image, 2 cols for 2-3 images */}
+                <div className={`grid gap-2 ${evidenceUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                  {evidenceUrls.map((url, idx) => (
+                    isImageUrl(url) ? (
+                      <div key={idx} className="relative group">
+                        <img
+                          src={url}
+                          alt={`evidence ${idx + 1}`}
+                          onClick={() => setImgOpen(idx)}
+                          className="rounded-xl w-full object-cover border border-gray-100 cursor-zoom-in hover:opacity-90 transition-opacity"
+                          style={{ maxHeight: evidenceUrls.length === 1 ? '18rem' : '10rem' }}
+                          onError={e => { e.target.parentElement.style.display = 'none' }}
+                        />
+                        {evidenceUrls.length > 1 && (
+                          <span className="absolute bottom-1.5 right-1.5 bg-black/50 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                            {idx + 1}/{evidenceUrls.length}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <a
+                        key={idx}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-sm text-lao-sky hover:underline font-lao break-all"
                       >
-                        <XIcon className="w-5 h-5" />
-                      </button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <a
-                  href={evidenceUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm text-lao-sky hover:underline font-lao break-all"
-                >
-                  <LinkIcon className="w-3.5 h-3.5 shrink-0" />
-                  {t.modal.evidenceLink}
-                </a>
-              )
+                        <LinkIcon className="w-3.5 h-3.5 shrink-0" />
+                        {t.modal.evidenceLink} {evidenceUrls.length > 1 ? `(${idx + 1})` : ''}
+                      </a>
+                    )
+                  ))}
+                </div>
+
+                {/* Fullscreen lightbox */}
+                {imgOpen !== null && (
+                  <div
+                    className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4"
+                    onClick={() => setImgOpen(null)}
+                  >
+                    <img
+                      src={evidenceUrls[imgOpen]}
+                      alt="evidence full"
+                      className="max-w-full max-h-full rounded-xl object-contain"
+                      onClick={e => e.stopPropagation()}
+                    />
+                    {/* Prev / Next buttons */}
+                    {evidenceUrls.length > 1 && (
+                      <>
+                        <button
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-white/20 hover:bg-white/40 rounded-full p-3 transition-colors disabled:opacity-30"
+                          disabled={imgOpen === 0}
+                          onClick={e => { e.stopPropagation(); setImgOpen(i => i - 1) }}
+                        >◀</button>
+                        <button
+                          className="absolute right-16 top-1/2 -translate-y-1/2 text-white bg-white/20 hover:bg-white/40 rounded-full p-3 transition-colors disabled:opacity-30"
+                          disabled={imgOpen === evidenceUrls.length - 1}
+                          onClick={e => { e.stopPropagation(); setImgOpen(i => i + 1) }}
+                        >▶</button>
+                        <span className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/70 text-sm font-bold">
+                          {imgOpen + 1} / {evidenceUrls.length}
+                        </span>
+                      </>
+                    )}
+                    <button
+                      onClick={() => setImgOpen(null)}
+                      className="absolute top-4 right-4 text-white bg-white/20 hover:bg-white/30 rounded-full p-2 transition-colors"
+                    >
+                      <XIcon className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
+              </>
             ) : (
               <p className="text-sm text-gray-400 font-lao">{t.modal.noEvidence}</p>
             )}
