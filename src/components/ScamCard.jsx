@@ -64,22 +64,21 @@ export default function ScamCard({ record, onSelect, highlight = '' }) {
       }}
       onClick={onSelect ? () => onSelect(record) : undefined}
     >
-      {/* Background illustration — anchored to top so icon is visible */}
+      {/* Background illustration — fills entire card */}
       <img
         src={bgImage}
         alt=""
         aria-hidden="true"
-        className="absolute inset-x-0 top-0 w-full object-cover"
-        style={{ height: '65%', objectPosition: 'center top' }}
+        className="absolute inset-0 w-full h-full object-cover"
         onError={e => { e.target.style.display = 'none' }}
       />
 
-      {/* White gradient overlay — light at top so illustration stays visible, opaque at bottom for text */}
+      {/* White gradient overlay — bottom half becomes solid so text stays readable, top half untouched to show illustration */}
       <div
         aria-hidden="true"
         className="absolute inset-0"
         style={{
-          background: 'linear-gradient(180deg, rgba(255,255,255,0) 40%, rgba(255,255,255,0.75) 60%, rgba(255,255,255,1) 78%, rgba(255,255,255,1) 100%)',
+          background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0) 45%, rgba(255,255,255,0.85) 62%, rgba(255,255,255,0.98) 78%, rgba(255,255,255,1) 100%)',
         }}
       />
 
