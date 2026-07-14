@@ -1,17 +1,6 @@
 import CategoryBadge from './CategoryBadge'
 import { useT } from '../hooks/useT'
 
-const LEFT_BORDER = {
-  phone:      'bg-orange-400',
-  banking:    'bg-red-500',
-  online:     'bg-purple-500',
-  investment: 'bg-yellow-400',
-  romance:    'bg-pink-400',
-  job:        'bg-blue-500',
-  lottery:    'bg-green-500',
-  other:      'bg-gray-400',
-}
-
 const CATEGORY_BG = {
   phone:      '/categories/bg-phone.png',
   banking:    '/categories/bg-bank.png',
@@ -21,6 +10,18 @@ const CATEGORY_BG = {
   job:        '/categories/bg-job.png',
   lottery:    '/categories/bg-lottery.png',
   other:      '/categories/bg-other.png',
+}
+
+// Category accent colors (matching design source — oklch)
+const CATEGORY_ACCENT = {
+  phone:      { pill: 'oklch(0.94 0.05 25)',   text: 'oklch(0.35 0.15 25)' },
+  banking:    { pill: 'oklch(0.93 0.04 250)',  text: 'oklch(0.35 0.15 250)' },
+  online:     { pill: 'oklch(0.93 0.035 200)', text: 'oklch(0.33 0.13 200)' },
+  investment: { pill: 'oklch(0.92 0.04 280)',  text: 'oklch(0.35 0.16 280)' },
+  romance:    { pill: 'oklch(0.93 0.04 345)',  text: 'oklch(0.38 0.16 345)' },
+  job:        { pill: 'oklch(0.93 0.04 55)',   text: 'oklch(0.38 0.16 55)' },
+  lottery:    { pill: 'oklch(0.92 0.04 315)',  text: 'oklch(0.36 0.16 315)' },
+  other:      { pill: 'oklch(0.93 0.035 170)', text: 'oklch(0.32 0.13 170)' },
 }
 
 function formatDate(dateStr) {
@@ -35,8 +36,12 @@ function formatDate(dateStr) {
 export default function ScamCard({ record, onSelect, highlight = '' }) {
   const { category, scammerName, phoneNumber, accountNumber, bankName, description, reportedAt, reportCount = 1 } = record
   const t = useT()
-  const borderColor = LEFT_BORDER[category] ?? LEFT_BORDER.other
   const bgImage = CATEGORY_BG[category] ?? CATEGORY_BG.other
+  const accent = CATEGORY_ACCENT[category] ?? CATEGORY_ACCENT.other
+  const catInfo = { phone: t.categories.phone, banking: t.categories.banking, online: t.categories.online,
+                    investment: t.categories.investment, romance: t.categories.romance, job: t.categories.job,
+                    lottery: t.categories.lottery, other: t.categories.other }
+  const categoryLabel = catInfo[category] || catInfo.other
 
   // Did the search query match this card's phone/account?
   const q = String(highlight || '').trim().toLowerCase()
@@ -44,127 +49,96 @@ export default function ScamCard({ record, onSelect, highlight = '' }) {
   const accountMatches = q && accountNumber && String(accountNumber).toLowerCase().includes(q)
   const hasMatch       = phoneMatches || accountMatches
 
+  const primaryId    = phoneNumber || accountNumber || ''
+  const primaryLabel = phoneNumber ? t.card.phone : (bankName || t.card.account)
+  const idMatches    = phoneNumber ? phoneMatches : accountMatches
+
   return (
     <article
-      className={`relative rounded-xl border bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex overflow-hidden group ${
-        hasMatch ? 'border-lao-red ring-2 ring-lao-red/20' : 'border-gray-200'
+      className={`relative rounded-[20px] overflow-hidden group transition-all hover:-translate-y-0.5 ${
+        hasMatch ? 'ring-2 ring-lao-red' : 'ring-1 ring-black/5'
       } ${onSelect ? 'cursor-pointer' : ''}`}
+      style={{
+        height: '300px',
+        boxShadow: '0 16px 34px -18px oklch(0.3 0.03 60 / 0.5)',
+      }}
       onClick={onSelect ? () => onSelect(record) : undefined}
     >
-      {/* Category background illustration — top-right corner */}
+      {/* Background illustration — full card */}
+      <img
+        src={bgImage}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 w-full h-full object-cover"
+        onError={e => { e.target.style.display = 'none' }}
+      />
+
+      {/* White gradient overlay for legibility */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute top-0 right-0 w-40 h-40 opacity-[0.18] group-hover:opacity-25 transition-opacity"
+        className="absolute inset-0"
         style={{
-          backgroundImage: `url(${bgImage})`,
-          backgroundSize: 'contain',
-          backgroundPosition: 'top right',
-          backgroundRepeat: 'no-repeat',
-          maskImage: 'linear-gradient(225deg, black 30%, transparent 75%)',
-          WebkitMaskImage: 'linear-gradient(225deg, black 30%, transparent 75%)',
+          background: 'linear-gradient(180deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.82) 64%, rgba(255,255,255,0.97) 100%)',
         }}
       />
 
-      {/* Left category color strip */}
-      <div className={`w-1.5 shrink-0 ${borderColor} relative z-10`} />
+      {/* Report count badge — top right corner (only if >1) */}
+      {reportCount > 1 && (
+        <div className="absolute top-3 right-3 z-10">
+          <span className={`inline-flex items-center gap-1 text-[11px] font-bold rounded-full px-2.5 py-1 font-lao whitespace-nowrap shadow-sm ${
+            reportCount >= 4 ? 'bg-red-500 text-white' : 'bg-orange-500 text-white'
+          }`}>
+            <WarningIcon className="w-3 h-3" />
+            {reportCount} {t.card.reports}
+          </span>
+        </div>
+      )}
 
-      <div className="flex-1 p-4 flex flex-col gap-3 min-w-0 relative z-10">
-        {/* Top row: category + report count */}
-        <div className="flex items-start justify-between gap-2">
-          <CategoryBadge categoryId={category} />
-          {reportCount > 1 && (
-            <span className={`shrink-0 flex items-center gap-1 text-xs font-bold rounded-full px-2.5 py-1 font-lao whitespace-nowrap ${
-              reportCount >= 4 ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'
-            }`}>
-              <WarningIcon className="w-3 h-3" />
-              {reportCount} {t.card.reports}
+      {/* Content — anchored to bottom */}
+      <div className="relative h-full flex flex-col justify-end p-5 gap-2">
+        {/* Category pill */}
+        <span
+          className="self-start px-3 py-1 rounded-full font-lao"
+          style={{ background: accent.pill, color: accent.text, fontSize: '12px', fontWeight: 700 }}
+        >
+          {categoryLabel}
+        </span>
+
+        {/* Primary identifier */}
+        {primaryId && (
+          <div className="text-[13px]" style={{ color: 'oklch(0.35 0.01 60)' }}>
+            <span className="font-lao">{primaryLabel} </span>
+            <span
+              className={`font-mono font-bold text-[15px] tracking-wide ${idMatches ? 'text-lao-red' : ''}`}
+              style={idMatches ? {} : { color: 'oklch(0.18 0.01 60)' }}
+            >
+              {primaryId}
+              {idMatches && (
+                <span className="ml-1.5 text-[9px] font-bold bg-lao-red text-white px-1.5 py-0.5 rounded uppercase align-middle">match</span>
+              )}
             </span>
-          )}
-        </div>
-
-        {/* Identifiers — hero of the card */}
-        <div className="space-y-1.5">
-          {phoneNumber && (
-            <div className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 transition-colors ${
-              phoneMatches
-                ? 'bg-yellow-100 border-2 border-yellow-400 shadow-sm'
-                : 'bg-gray-50 border border-gray-100'
-            }`}>
-              <PhoneIcon className={`w-3.5 h-3.5 shrink-0 ${phoneMatches ? 'text-lao-red' : 'text-gray-400'}`} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  <p className={`text-[10px] font-lao leading-none ${phoneMatches ? 'text-lao-red font-bold' : 'text-gray-400'}`}>
-                    {t.card.phone}
-                  </p>
-                  {phoneMatches && (
-                    <span className="text-[9px] font-bold bg-lao-red text-white px-1.5 py-0.5 rounded uppercase tracking-wide">match</span>
-                  )}
-                </div>
-                <p className={`font-mono font-extrabold text-base tracking-wide mt-0.5 ${phoneMatches ? 'text-lao-red' : 'text-gray-900'}`}>
-                  {phoneNumber}
-                </p>
-              </div>
-            </div>
-          )}
-          {accountNumber && (
-            <div className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 transition-colors ${
-              accountMatches
-                ? 'bg-yellow-100 border-2 border-yellow-400 shadow-sm'
-                : 'bg-gray-50 border border-gray-100'
-            }`}>
-              <BankIcon className={`w-3.5 h-3.5 shrink-0 ${accountMatches ? 'text-lao-red' : 'text-gray-400'}`} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  <p className={`text-[10px] font-lao leading-none ${accountMatches ? 'text-lao-red font-bold' : 'text-gray-400'}`}>
-                    {bankName || t.card.account}
-                  </p>
-                  {accountMatches && (
-                    <span className="text-[9px] font-bold bg-lao-red text-white px-1.5 py-0.5 rounded uppercase tracking-wide">match</span>
-                  )}
-                </div>
-                <p className={`font-mono font-extrabold text-base tracking-wide mt-0.5 ${accountMatches ? 'text-lao-red' : 'text-gray-900'}`}>
-                  {accountNumber}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Scammer name */}
-        {scammerName && (
-          <p className="text-sm font-semibold text-gray-800 font-lao -mt-1">{scammerName}</p>
+          </div>
         )}
 
-        {/* Description */}
-        {description && (
-          <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed font-lao">{description}</p>
+        {/* Scammer name / short description */}
+        {(scammerName || description) && (
+          <div
+            className="font-lao font-bold leading-snug line-clamp-2"
+            style={{ color: 'oklch(0.16 0.01 60)', fontSize: '16px' }}
+          >
+            {scammerName || description}
+          </div>
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-2 border-t border-gray-100 mt-auto">
-          <p className="text-xs text-gray-400 font-lao">{t.card.reported} {formatDate(reportedAt)}</p>
+        <div className="flex justify-between items-center mt-1 text-[12px] font-lao" style={{ color: 'oklch(0.45 0.01 60)' }}>
+          <span>{t.card.reported} {formatDate(reportedAt)}</span>
           {onSelect && (
-            <span className="text-xs text-lao-sky font-lao font-medium">{t.card.viewDetail}</span>
+            <span style={{ color: accent.text, fontWeight: 600 }}>{t.card.viewDetail}</span>
           )}
         </div>
       </div>
     </article>
-  )
-}
-
-function PhoneIcon({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-    </svg>
-  )
-}
-
-function BankIcon({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-    </svg>
   )
 }
 
