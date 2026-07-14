@@ -12,6 +12,17 @@ const LEFT_BORDER = {
   other:      'bg-gray-400',
 }
 
+const CATEGORY_BG = {
+  phone:      '/categories/bg-phone.png',
+  banking:    '/categories/bg-bank.png',
+  online:     '/categories/bg-online.png',
+  investment: '/categories/bg-invest.png',
+  romance:    '/categories/bg-romance.png',
+  job:        '/categories/bg-job.png',
+  lottery:    '/categories/bg-lottery.png',
+  other:      '/categories/bg-other.png',
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return ''
   try {
@@ -25,6 +36,7 @@ export default function ScamCard({ record, onSelect, highlight = '' }) {
   const { category, scammerName, phoneNumber, accountNumber, bankName, description, reportedAt, reportCount = 1 } = record
   const t = useT()
   const borderColor = LEFT_BORDER[category] ?? LEFT_BORDER.other
+  const bgImage = CATEGORY_BG[category] ?? CATEGORY_BG.other
 
   // Did the search query match this card's phone/account?
   const q = String(highlight || '').trim().toLowerCase()
@@ -34,15 +46,29 @@ export default function ScamCard({ record, onSelect, highlight = '' }) {
 
   return (
     <article
-      className={`rounded-xl border bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex overflow-hidden ${
+      className={`relative rounded-xl border bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex overflow-hidden group ${
         hasMatch ? 'border-lao-red ring-2 ring-lao-red/20' : 'border-gray-200'
       } ${onSelect ? 'cursor-pointer' : ''}`}
       onClick={onSelect ? () => onSelect(record) : undefined}
     >
-      {/* Left category color strip */}
-      <div className={`w-1.5 shrink-0 ${borderColor}`} />
+      {/* Category background illustration — top-right corner */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute top-0 right-0 w-40 h-40 opacity-[0.18] group-hover:opacity-25 transition-opacity"
+        style={{
+          backgroundImage: `url(${bgImage})`,
+          backgroundSize: 'contain',
+          backgroundPosition: 'top right',
+          backgroundRepeat: 'no-repeat',
+          maskImage: 'linear-gradient(225deg, black 30%, transparent 75%)',
+          WebkitMaskImage: 'linear-gradient(225deg, black 30%, transparent 75%)',
+        }}
+      />
 
-      <div className="flex-1 p-4 flex flex-col gap-3 min-w-0">
+      {/* Left category color strip */}
+      <div className={`w-1.5 shrink-0 ${borderColor} relative z-10`} />
+
+      <div className="flex-1 p-4 flex flex-col gap-3 min-w-0 relative z-10">
         {/* Top row: category + report count */}
         <div className="flex items-start justify-between gap-2">
           <CategoryBadge categoryId={category} />
