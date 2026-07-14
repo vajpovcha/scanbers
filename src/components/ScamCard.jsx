@@ -123,8 +123,8 @@ export default function ScamCard({ record, onSelect, highlight = '' }) {
         {/* Scammer name / short description */}
         {(scammerName || description) && (
           <div
-            className="font-lao font-bold leading-snug line-clamp-2"
-            style={{ color: 'oklch(0.16 0.01 60)', fontSize: '16px' }}
+            className="font-lao leading-snug line-clamp-2"
+            style={{ color: 'oklch(0.16 0.01 60)', fontSize: '15px' }}
           >
             {scammerName || description}
           </div>
